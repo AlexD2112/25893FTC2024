@@ -76,6 +76,37 @@ public class mecanum extends LinearOpMode {
         if (opModeIsActive()) {
             while (opModeIsActive()) {
                 if (isVision == false) {
+                    // NEW MECANUM
+                    x = gamepad1.left_stick_x;
+                    y = -gamepad1.left_stick_y;
+                    turn = gamepad1.right_stick_x;
+
+                    theta = Math.atan2(y, x);
+                    power = Math.hypot(x, y);
+
+                    sin = Math.sin(theta - Math.PI/4);
+                    cos = Math.cos(theta - Math.PI/4);
+                    max = Math.max(Math.abs(sin), Math.abs(cos));
+
+                    double lfp = power * cos/max + turn;
+                    double rfp = power * sin/max - turn;
+                    double lbp = power * sin/max + turn;
+                    double rbp = power * cos/max - turn;
+
+                    if ((power + Math.abs(turn)) > 1) {
+                        lfp /= power + turn;
+                        rfp /= power + turn;
+                        lbp /= power + turn;
+                        rbp /= power + turn;
+                    }
+
+                    RFMotor.setPower(rfp);
+                    RBMotor.setPower(rbp);
+                    LFMotor.setPower(lfp);
+                    LBMotor.setPower(lbp);
+
+                    // OLD MECANUM
+                    /*
                     // MOTORS
                     double vertical = 0;
                     double horizontal = 0;
@@ -96,6 +127,7 @@ public class mecanum extends LinearOpMode {
                     RBMotor.setPower(brp);
                     LFMotor.setPower(flp);
                     LBMotor.setPower(blp);
+                    */
 
                     // Show the elapsed game time and wheel power.
                     /*
