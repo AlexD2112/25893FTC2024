@@ -18,7 +18,7 @@ import java.util.List;
 //@Disabled
 public class mecanum extends LinearOpMode {
 
-    // CONTROL decleration
+    // VISION decleration
     public boolean isVision = true;
 
     // Motor Declerations
@@ -28,7 +28,7 @@ public class mecanum extends LinearOpMode {
     private DcMotor LFMotor = null;
     private DcMotor LBMotor = null;
    
-    // PID
+    // PID coefficients
     private double Kp = 0.01;
     private double Ki = 0;
     private double Kd = 0;
@@ -50,6 +50,7 @@ public class mecanum extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+
         // MOTOR STUFF
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -73,10 +74,11 @@ public class mecanum extends LinearOpMode {
         telemetry.update();
         waitForStart();
 
+        // OP MODE STUFF
         if (opModeIsActive()) {
             while (opModeIsActive()) {
                 if (isVision == false) {
-                    // NEW MECANUM
+                    // NEW MECANUM DRIVE
                     x = gamepad1.left_stick_x;
                     y = -gamepad1.left_stick_y;
                     turn = gamepad1.right_stick_x;
@@ -105,7 +107,7 @@ public class mecanum extends LinearOpMode {
                     LFMotor.setPower(lfp);
                     LBMotor.setPower(lbp);
 
-                    // OLD MECANUM
+                    // OLD MECANUM DRIVE
                     /*
                     // MOTORS
                     double vertical = 0;
@@ -137,6 +139,7 @@ public class mecanum extends LinearOpMode {
                     */
                     telemetry.update();
                    
+                   // Press a to switch to vision
                     if (gamepad1.a) {
                         isVision = true;
                     }
@@ -164,6 +167,11 @@ public class mecanum extends LinearOpMode {
                         visionPortal.resumeStreaming();
                     }
                    
+                    // Press a to switch to manual drive
+                    if (gamepad1.a) {
+                        isVision = true;
+                    }
+                   
                     // Share the CPU.
                     sleep(20);
                 }
@@ -175,6 +183,7 @@ public class mecanum extends LinearOpMode {
 
     }   // end method runOpMode()
 
+    // Calculate PID
     public double PIDControl(double reference, double state, ElapsedTime timer) {
         double error = reference - state;
         double derivative = (error - lastError) / timer.seconds();
@@ -185,6 +194,7 @@ public class mecanum extends LinearOpMode {
         return out;
     }
    
+    // Basic drive method for usage with PID
     public void drive(double throttle, double turn, DcMotor frontRight, DcMotor frontLeft, DcMotor backRight, DcMotor backLeft) {
         if (turn != 0) {
             frontLeft.setPower((-turn * throttle));
