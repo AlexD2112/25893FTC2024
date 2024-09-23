@@ -96,10 +96,14 @@ public class mecanum extends LinearOpMode {
                     double rbp = power * cos/max - turn;
 
                     if ((power + Math.abs(turn)) > 1) {
-                        lfp /= power + turn;
-                        rfp /= power + turn;
-                        lbp /= power + turn;
-                        rbp /= power + turn;
+                        // Set a multiplier
+                        double controlSpeed = 0.5;
+
+                        // Multiply power by constant to control speed
+                        (lfp /= power + turn) * controlSpeed;
+                        (rfp /= power + turn) * controlSpeed;
+                        (lbp /= power + turn) * controlSpeed;
+                        (rbp /= power + turn) * controlSpeed;
                     }
 
                     RFMotor.setPower(rfp);
