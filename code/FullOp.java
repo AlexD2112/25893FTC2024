@@ -14,9 +14,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 import java.util.List;
 
-@TeleOp(name = "MecanumTester", group = "Concept")
+@TeleOp(name = "FullOp", group = "Concept")
 //@Disabled
-public class mecanum extends LinearOpMode {
+public class FullOp extends LinearOpMode {
 
     // VISION decleration
     public boolean isVision = true;
@@ -143,7 +143,7 @@ public class mecanum extends LinearOpMode {
                     */
                     telemetry.update();
                    
-                   // Press a to switch to vision
+                    // Press a to switch to vision
                     if (gamepad1.a) {
                         isVision = true;
                     }
