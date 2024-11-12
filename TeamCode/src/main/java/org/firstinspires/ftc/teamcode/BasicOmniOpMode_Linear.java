@@ -27,7 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.robotcontroller.external.samples;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -78,10 +78,10 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
-        leftFrontDrive  = hardwareMap.get(DcMotor.class, "LF");
-        leftBackDrive  = hardwareMap.get(DcMotor.class, "LB");
-        rightFrontDrive = hardwareMap.get(DcMotor.class, "RF");
-        rightBackDrive = hardwareMap.get(DcMotor.class, "RB");
+        leftFrontDrive  = hardwareMap.get(DcMotor.class, "leftFront");
+        leftBackDrive  = hardwareMap.get(DcMotor.class, "leftBack");
+        rightFrontDrive = hardwareMap.get(DcMotor.class, "rightFront");
+        rightBackDrive = hardwareMap.get(DcMotor.class, "rightBack");
 
         // ########################################################################################
         // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
