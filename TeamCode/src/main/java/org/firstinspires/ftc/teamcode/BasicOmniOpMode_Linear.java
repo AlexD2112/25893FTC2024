@@ -31,7 +31,9 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /*
@@ -72,6 +74,10 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
+    private DcMotor liftDrive = null;
+
+    private CRServo leftServo = null;
+    private CRServo rightServo = null;
 
     @Override
     public void runOpMode() {
@@ -82,6 +88,11 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         leftBackDrive  = hardwareMap.get(DcMotor.class, "leftBack");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "rightFront");
         rightBackDrive = hardwareMap.get(DcMotor.class, "rightBack");
+
+        liftDrive = hardwareMap.get(DcMotor.class, "lift");
+        leftServo = hardwareMap.get(CRServo.class, "leftServo");
+        rightServo = hardwareMap.get(CRServo.class, "rightServo");
+
 
         // ########################################################################################
         // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
@@ -97,6 +108,12 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        liftDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftServo.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightServo.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        //Encoder
+        liftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
@@ -105,21 +122,67 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
+        // THESE CONSTANTS
+        // PID Constants (adjust these values during testing)
+        double Kp = 0.8;
+        double Ki = 0.001;
+        double Kd = 10;
+        //<<>>
+
+        // PID variables
+        double lastError = 0;
+        double integral = 0;
+        double error = 0;
+        double output = 0;
+
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
             double max;
 
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
-            double axial   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
-            double lateral =  gamepad1.left_stick_x;
-            double yaw     =  gamepad1.right_stick_x;
+            double axial = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
+            double lateral = gamepad1.left_stick_x;
+            double yaw = gamepad1.right_stick_x;
 
             // Combine the joystick requests for each axis-motion to determine each wheel's power.
             // Set up a variable for each drive wheel to save the power level for telemetry.
-            double leftFrontPower  = axial + lateral + yaw;
+            double leftFrontPower = axial + lateral + yaw;
             double rightFrontPower = axial - lateral - yaw;
-            double leftBackPower   = axial - lateral + yaw;
-            double rightBackPower  = axial + lateral - yaw;
+            double leftBackPower = axial - lateral + yaw;
+            double rightBackPower = axial + lateral - yaw;
+            double liftDown = gamepad1.left_trigger;
+            double liftUp = -gamepad1.right_trigger;
+
+            int targetPosition = 0;
+            if (liftUp != 0) {
+                liftDrive.setPower(liftUp * 0.75);
+            }
+            else if (liftDown != 0) {
+                liftDrive.setPower(liftDown * 0.75);
+            } else {
+                targetPosition = liftDrive.getCurrentPosition();
+
+                // Get current position
+                int currentPosition = liftDrive.getCurrentPosition();
+
+                // Calculate error
+                error = targetPosition - currentPosition;
+
+                // PID terms
+                double proportional = Kp * error;
+                integral += error;
+                double integralTerm = Ki * integral;
+                double derivative = error - lastError;
+                double derivativeTerm = Kd * derivative;
+
+                // Total PID output
+                output = proportional + integralTerm + derivativeTerm;
+
+                // Set motor power
+                liftDrive.setPower(output);
+            }
+
+
 
             // Normalize the values so no wheel power exceeds 100%
             // This ensures that the robot maintains the desired motion.
@@ -128,10 +191,10 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             max = Math.max(max, Math.abs(rightBackPower));
 
             if (max > 1.0) {
-                leftFrontPower  /= max;
+                leftFrontPower /= max;
                 rightFrontPower /= max;
-                leftBackPower   /= max;
-                rightBackPower  /= max;
+                leftBackPower /= max;
+                rightBackPower /= max;
             }
 
             // This is test code:
@@ -152,10 +215,33 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             */
 
             // Send calculated power to wheels
-            leftFrontDrive.setPower(leftFrontPower);
-            rightFrontDrive.setPower(rightFrontPower);
-            leftBackDrive.setPower(leftBackPower);
-            rightBackDrive.setPower(rightBackPower);
+            double speed = 0.75;
+            leftFrontDrive.setPower(leftFrontPower * speed);
+            rightFrontDrive.setPower(rightFrontPower * speed);
+            leftBackDrive.setPower(leftBackPower * speed);
+            rightBackDrive.setPower(rightBackPower * speed);
+
+            if (gamepad1.a) {
+                leftServo.setPower(1);
+                rightServo.setPower(1);
+            } else if (gamepad1.x) {
+                leftServo.setPower(-1);
+                rightServo.setPower(-1);
+            } else {
+                leftServo.setPower(0);
+                rightServo.setPower(0);
+            }
+
+            /*
+            if (gamepad1.a) {
+                leftServo.setPower(0.5);
+                rightServo.setPower(-0.5);
+            }
+            if (gamepad1.b) {
+                leftServo.setPower(-0.5);
+                rightServo.setPower(0.5);
+            }
+             */
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
