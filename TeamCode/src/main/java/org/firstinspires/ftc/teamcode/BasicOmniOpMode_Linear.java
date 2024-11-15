@@ -29,12 +29,16 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.PoseVelocity2d;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
 
 /*
  * This file contains an example of a Linear "OpMode".
@@ -70,10 +74,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
     // Declare OpMode members for each of the 4 motors.
     private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor leftFrontDrive = null;
-    private DcMotor leftBackDrive = null;
-    private DcMotor rightFrontDrive = null;
-    private DcMotor rightBackDrive = null;
+    private MecanumDrive drive;
     private DcMotor liftDrive = null;
 
     private CRServo leftServo = null;
@@ -84,10 +85,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
-        leftFrontDrive  = hardwareMap.get(DcMotor.class, "leftFront");
-        leftBackDrive  = hardwareMap.get(DcMotor.class, "leftBack");
-        rightFrontDrive = hardwareMap.get(DcMotor.class, "rightFront");
-        rightBackDrive = hardwareMap.get(DcMotor.class, "rightBack");
+        drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
 
         liftDrive = hardwareMap.get(DcMotor.class, "lift");
         leftServo = hardwareMap.get(CRServo.class, "leftServo");
@@ -103,11 +101,8 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         // that your motors are turning in the correct direction.  So, start out with the reversals here, BUT
         // when you first test your robot, push the left joystick forward and observe the direction the wheels turn.
         // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
-        // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
-        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward
+        // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward
         liftDrive.setDirection(DcMotor.Direction.FORWARD);
         leftServo.setDirection(DcMotorSimple.Direction.FORWARD);
         rightServo.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -135,7 +130,6 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         // PID variables
         double lastError = 0;
         double integral = 0;
-        double error = 0;
         double output = 0;
 
         boolean registered = false;
@@ -143,27 +137,24 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            double max;
+            double speed = 0.75;
 
-            // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
-            double axial = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
-            double lateral = gamepad1.left_stick_x;
-            double yaw = gamepad1.right_stick_x;
-            double intake = gamepad1.right_stick_y;
-            telemetry.addData("target", "%f", intake);
+            // Drivetrain control using Road Runner
+            double axial = -gamepad1.left_stick_y;  // Forward/backward
+            double lateral = gamepad1.left_stick_x;  // Strafing
+            double yaw = gamepad1.right_stick_x;  // Rotation
+            drive.setDrivePowers(new PoseVelocity2d(new Vector2d(lateral, axial), yaw));
 
-            // Combine the joystick requests for each axis-motion to determine each wheel's power.
-            // Set up a variable for each drive wheel to save the power level for telemetry.
-            double leftFrontPower = axial + lateral + yaw;
-            double rightFrontPower = axial - lateral - yaw;
-            double leftBackPower = axial - lateral + yaw;
-            double rightBackPower = axial + lateral - yaw;
+            // Intake control
+            double intakePower = gamepad1.right_stick_y;
+            leftServo.setPower(intakePower * 2);
+            rightServo.setPower(intakePower * 2);
+
+            // Lift control
             double liftDown = gamepad1.left_trigger;
             double liftUp = -gamepad1.right_trigger;
-            //boolean intake = gamepad1.a;
-            //boolean outtake = gamepad1.b;
-
             boolean braking = false;
+
             if (gamepad1.y) {
                 liftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
                 liftDrive.setPower(0);
@@ -173,95 +164,36 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             if (liftUp != 0 && !braking) {
                 liftDrive.setPower(liftUp * 0.75);
                 registered = false;
-            }
-            else if (liftDown != 0 && !braking) {
+            } else if (liftDown != 0 && !braking) {
                 liftDrive.setPower(liftDown * 0.75);
                 registered = false;
             } else if (!braking) {
-                telemetry.addData("target", "%d", targetPosition);
                 if (!registered) {
                     targetPosition = liftDrive.getCurrentPosition();
                     registered = true;
-                } 
+                }
 
-                // Get current position
+                // PID Control for lift
                 int currentPosition = liftDrive.getCurrentPosition();
-                telemetry.addData("control", "%d", currentPosition);
+                double error = targetPosition - currentPosition;
 
-                // Calculate error
-                error = targetPosition - currentPosition;
-
-                // PID terms
                 double proportional = Kp * error;
                 integral += error;
                 double integralTerm = Ki * integral;
                 double derivative = error - lastError;
                 double derivativeTerm = Kd * derivative;
 
-                // Total PID output
                 output = proportional + integralTerm + derivativeTerm;
-
-                // Set motor power
                 liftDrive.setPower(output);
+
+                lastError = error;
             }
 
-
-
-            // Normalize the values so no wheel power exceeds 100%
-            // This ensures that the robot maintains the desired motion.
-            max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
-            max = Math.max(max, Math.abs(leftBackPower));
-            max = Math.max(max, Math.abs(rightBackPower));
-
-            if (max > 1.0) {
-                leftFrontPower /= max;
-                rightFrontPower /= max;
-                leftBackPower /= max;
-                rightBackPower /= max;
-            }
-
-            // This is test code:
-            //
-            // Uncomment the following code to test your motor directions.
-            // Each button should make the corresponding motor run FORWARD.
-            //   1) First get all the motors to take to correct positions on the robot
-            //      by adjusting your Robot Configuration if necessary.
-            //   2) Then make sure they run in the correct direction by modifying the
-            //      the setDirection() calls above.
-            // Once the correct motors move in the correct direction re-comment this code.
-
-            /*
-            leftFrontPower  = gamepad1.x ? 1.0 : 0.0;  // X gamepad
-            leftBackPower   = gamepad1.a ? 1.0 : 0.0;  // A gamepad
-            rightFrontPower = gamepad1.y ? 1.0 : 0.0;  // Y gamepad
-            rightBackPower  = gamepad1.b ? 1.0 : 0.0;  // B gamepad
-            */
-
-            // Send calculated power to wheels
-            double speed = 0.75;
-            leftFrontDrive.setPower(leftFrontPower * speed);
-            rightFrontDrive.setPower(rightFrontPower * speed);
-            leftBackDrive.setPower(leftBackPower * speed);
-            rightBackDrive.setPower(rightBackPower * speed);
-
-            leftServo.setPower(intake * 2);
-            rightServo.setPower(intake * 2);
-
-            /*
-            if (gamepad1.a) {
-                leftServo.setPower(0.5);
-                rightServo.setPower(-0.5);
-            }
-            if (gamepad1.b) {
-                leftServo.setPower(-0.5);
-                rightServo.setPower(0.5);
-            }
-             */
-
-            // Show the elapsed game time and wheel power.
-            telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
-            telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
+            // Telemetry updates
+            telemetry.addData("Lift Target", targetPosition);
+            telemetry.addData("Lift Current", liftDrive.getCurrentPosition());
+            telemetry.addData("Lift Output", output);
+            telemetry.addData("Intake Power", intakePower);
             telemetry.update();
         }
     }}
