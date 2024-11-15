@@ -124,9 +124,12 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
         // THESE CONSTANTS
         // PID Constants (adjust these values during testing)
-        double Kp = 0.8;
-        double Ki = 0.001;
-        double Kd = 10;
+//        double Kp = 0.3;
+//        double Ki = 0.005;
+//        double Kd = 0.9;
+        double Kp = 0.0001;
+        double Ki = 0;
+        double Kd = 0.00001;
         //<<>>
 
         // PID variables
@@ -134,6 +137,9 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         double integral = 0;
         double error = 0;
         double output = 0;
+
+        boolean registered = false;
+        int targetPosition = 0;
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
@@ -143,6 +149,8 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             double axial = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
             double lateral = gamepad1.left_stick_x;
             double yaw = gamepad1.right_stick_x;
+            double intake = gamepad1.right_stick_y;
+            telemetry.addData("target", "%f", intake);
 
             // Combine the joystick requests for each axis-motion to determine each wheel's power.
             // Set up a variable for each drive wheel to save the power level for telemetry.
@@ -152,18 +160,33 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             double rightBackPower = axial + lateral - yaw;
             double liftDown = gamepad1.left_trigger;
             double liftUp = -gamepad1.right_trigger;
+            //boolean intake = gamepad1.a;
+            //boolean outtake = gamepad1.b;
 
-            int targetPosition = 0;
-            if (liftUp != 0) {
-                liftDrive.setPower(liftUp * 0.75);
+            boolean braking = false;
+            if (gamepad1.y) {
+                liftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                liftDrive.setPower(0);
+                braking = true;
             }
-            else if (liftDown != 0) {
+
+            if (liftUp != 0 && !braking) {
+                liftDrive.setPower(liftUp * 0.75);
+                registered = false;
+            }
+            else if (liftDown != 0 && !braking) {
                 liftDrive.setPower(liftDown * 0.75);
-            } else {
-                targetPosition = liftDrive.getCurrentPosition();
+                registered = false;
+            } else if (!braking) {
+                telemetry.addData("target", "%d", targetPosition);
+                if (!registered) {
+                    targetPosition = liftDrive.getCurrentPosition();
+                    registered = true;
+                } 
 
                 // Get current position
                 int currentPosition = liftDrive.getCurrentPosition();
+                telemetry.addData("control", "%d", currentPosition);
 
                 // Calculate error
                 error = targetPosition - currentPosition;
@@ -221,16 +244,8 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             leftBackDrive.setPower(leftBackPower * speed);
             rightBackDrive.setPower(rightBackPower * speed);
 
-            if (gamepad1.a) {
-                leftServo.setPower(1);
-                rightServo.setPower(1);
-            } else if (gamepad1.x) {
-                leftServo.setPower(-1);
-                rightServo.setPower(-1);
-            } else {
-                leftServo.setPower(0);
-                rightServo.setPower(0);
-            }
+            leftServo.setPower(intake * 2);
+            rightServo.setPower(intake * 2);
 
             /*
             if (gamepad1.a) {
