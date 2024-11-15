@@ -122,9 +122,9 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 //        double Kp = 0.3;
 //        double Ki = 0.005;
 //        double Kd = 0.9;
-        double Kp = 0.0001;
+        double Kp = 0.01;
         double Ki = 0;
-        double Kd = 0.00001;
+        double Kd = 0.001;
         //<<>>
 
         // PID variables
@@ -140,19 +140,19 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             double speed = 0.75;
 
             // Drivetrain control using Road Runner
-            double axial = -gamepad1.left_stick_y;  // Forward/backward
+            double axial = gamepad1.left_stick_y;  // Forward/backward
             double lateral = gamepad1.left_stick_x;  // Strafing
-            double yaw = gamepad1.right_stick_x;  // Rotation
-            drive.setDrivePowers(new PoseVelocity2d(new Vector2d(lateral, axial), yaw));
+            double yaw = - gamepad1.right_stick_x;  // Rotation
+            drive.setDrivePowers(new PoseVelocity2d(new Vector2d(axial, lateral), yaw));
 
             // Intake control
             double intakePower = gamepad1.right_stick_y;
-            leftServo.setPower(intakePower * 2);
-            rightServo.setPower(intakePower * 2);
+            //leftServo.setPower(intakePower * 2);
+            //rightServo.setPower(intakePower * 2);
 
             // Lift control
-            double liftDown = gamepad1.left_trigger;
-            double liftUp = -gamepad1.right_trigger;
+            double liftDown = -gamepad1.left_trigger;
+            double liftUp = gamepad1.right_trigger;
             boolean braking = false;
 
             if (gamepad1.y) {
@@ -161,15 +161,30 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 braking = true;
             }
 
-            if (liftUp != 0 && !braking) {
+            if (gamepad1.a) {
+                leftServo.setPower(1);
+                rightServo.setPower(1);
+            } else if (gamepad1.x) {
+                leftServo.setPower(-1);
+                rightServo.setPower(-1);
+            } else {
+                leftServo.setPower(0);
+                rightServo.setPower(0);
+            }
+
+            int limiter = 1000;
+
+            final int hardstop = 1550;
+
+            if ((liftDrive.getCurrentPosition() < hardstop) && liftUp != 0 && !braking) {
                 liftDrive.setPower(liftUp * 0.75);
                 registered = false;
-            } else if (liftDown != 0 && !braking) {
+            } else if ((liftDrive.getCurrentPosition() < hardstop) && liftDown != 0 && !braking) {
                 liftDrive.setPower(liftDown * 0.75);
                 registered = false;
             } else if (!braking) {
                 if (!registered) {
-                    targetPosition = liftDrive.getCurrentPosition();
+                    targetPosition = Math.min(liftDrive.getCurrentPosition(), hardstop);
                     registered = true;
                 }
 
