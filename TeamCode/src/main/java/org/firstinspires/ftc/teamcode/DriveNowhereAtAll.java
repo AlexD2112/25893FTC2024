@@ -55,8 +55,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
  */
 
-@Autonomous(name="Drive Backwards Slowly", group="Robot")
-public class DriveBackwardSlowly extends LinearOpMode {
+@Autonomous(name="Drive Nowhere At All", group="Robot")
+public class DriveNowhereAtAll extends LinearOpMode {
 
     /* Declare OpMode members. */
     static final double     FORWARD_SPEED = 0.1;
@@ -80,37 +80,13 @@ public class DriveBackwardSlowly extends LinearOpMode {
         //Elapsed time tracks elapsed time (very important comment)
         ElapsedTime runtime = new ElapsedTime();
 
-        // Set drive powers to move the robot
-        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(axial, lateral), yaw));
-
-        // Run for 30 seconds
-        while (opModeIsActive() && (runtime.seconds() < 3.0)) {
-            drive.updatePoseEstimate();
-            telemetry.addData("Status", "Driving Backward");
-            telemetry.addData("Axial", axial);
-            telemetry.addData("Lateral", lateral);
-            telemetry.addData("Yaw", yaw);
-            telemetry.update();
-        }
-
-        axial = 0.1;
-        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(axial, lateral), yaw));
-
-        while (opModeIsActive() && (runtime.seconds() < 8.0)) {
-            drive.updatePoseEstimate();
-            telemetry.addData("Status", "Driving Backward");
-            telemetry.addData("Axial", axial);
-            telemetry.addData("Lateral", lateral);
-            telemetry.addData("Yaw", yaw);
-            telemetry.update();
-        }
-
         while (opModeIsActive() && runtime.seconds() < 30.0) {
             // Stop the robot
             drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
             telemetry.addData("Planning is not a Northside strength", runtime.seconds());
             telemetry.update();
         }
+
 
         telemetry.addData("Status", "Complete");
         telemetry.update();

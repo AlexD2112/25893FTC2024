@@ -34,6 +34,8 @@ import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /*
@@ -55,8 +57,16 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
  */
 
-@Autonomous(name="Drive Backwards Slowly", group="Robot")
-public class DriveBackwardSlowly extends LinearOpMode {
+
+
+@Autonomous(name="Score", group="Robot")
+public class Score extends LinearOpMode {
+
+    private MecanumDrive drive;
+    private DcMotor liftDrive = null;
+
+    private CRServo leftServo = null;
+    private CRServo rightServo = null;
 
     /* Declare OpMode members. */
     static final double     FORWARD_SPEED = 0.1;
@@ -64,7 +74,13 @@ public class DriveBackwardSlowly extends LinearOpMode {
     @Override
     public void runOpMode() {
         // Initialize MecanumDrive
-        MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
+        drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
+
+        liftDrive = hardwareMap.get(DcMotor.class, "lift");
+        leftServo = hardwareMap.get(CRServo.class, "leftServo");
+        rightServo = hardwareMap.get(CRServo.class, "rightServo");
+
+        liftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         telemetry.addData("Status", "Ready to run");
         telemetry.update();
@@ -73,20 +89,33 @@ public class DriveBackwardSlowly extends LinearOpMode {
         waitForStart();
 
         // Define the axial (forward/backward), lateral (sideways), and yaw (rotation) speeds
-        double axial = 0.3;    // Slow backward speed
+        double axial = -0.2;    // Slow backward speed
         double lateral = 0.0;   // No lateral movement
         double yaw = 0.0;       // No rotation
 
         //Elapsed time tracks elapsed time (very important comment)
         ElapsedTime runtime = new ElapsedTime();
 
+        double Kp = 0.01;
+        double Ki = 0;
+        double Kd = 0.001;
+        //<<>>
+
+        // PID variables
+        double lastError = 0;
+        double integral = 0;
+        double output = 0;
+
+        int targetPosition = 0;
+        int finalTargetPosition = -1200;
+
         // Set drive powers to move the robot
         drive.setDrivePowers(new PoseVelocity2d(new Vector2d(axial, lateral), yaw));
 
         // Run for 30 seconds
-        while (opModeIsActive() && (runtime.seconds() < 3.0)) {
+        while (opModeIsActive() && (runtime.seconds() < 7.0)) {
             drive.updatePoseEstimate();
-            telemetry.addData("Status", "Driving Backward");
+            telemetry.addData("Status", "Driving Sideways");
             telemetry.addData("Axial", axial);
             telemetry.addData("Lateral", lateral);
             telemetry.addData("Yaw", yaw);
@@ -94,16 +123,100 @@ public class DriveBackwardSlowly extends LinearOpMode {
         }
 
         axial = 0.1;
+        lateral = 0;
         drive.setDrivePowers(new PoseVelocity2d(new Vector2d(axial, lateral), yaw));
 
-        while (opModeIsActive() && (runtime.seconds() < 8.0)) {
+        while (opModeIsActive() && (runtime.seconds() < 7.8)) {
             drive.updatePoseEstimate();
-            telemetry.addData("Status", "Driving Backward");
+            telemetry.addData("Status", "Backing Up");
             telemetry.addData("Axial", axial);
             telemetry.addData("Lateral", lateral);
             telemetry.addData("Yaw", yaw);
             telemetry.update();
         }
+
+        axial = 0;
+        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(axial, lateral), yaw));
+
+        while (opModeIsActive() && (runtime.seconds() < 15)) {
+            targetPosition = (int) ((finalTargetPosition) * (Math.min(runtime.seconds(), 14) - 7.8) / (14-7.8));
+
+            int currentPosition = liftDrive.getCurrentPosition();
+            double error = targetPosition - currentPosition;
+
+            double proportional = Kp * error;
+            integral += error;
+            double integralTerm = Ki * integral;
+            double derivative = error - lastError;
+            double derivativeTerm = Kd * derivative;
+
+            output = proportional + integralTerm + derivativeTerm;
+            liftDrive.setPower(output);
+
+            lastError = error;
+            drive.updatePoseEstimate();
+            telemetry.addData("Status", "Lifting arm");
+            telemetry.addData("Axial", axial);
+            telemetry.addData("Lateral", lateral);
+            telemetry.addData("Yaw", yaw);
+            telemetry.addData("Lift Target", targetPosition);
+            telemetry.addData("Lift Current", liftDrive.getCurrentPosition());
+            telemetry.addData("Lift Output", output);
+            telemetry.update();
+        }
+
+        targetPosition = 1350;
+
+        while (opModeIsActive() && runtime.seconds() < 17) {
+            int currentPosition = liftDrive.getCurrentPosition();
+            double error = targetPosition - currentPosition;
+
+            double proportional = Kp * error;
+            integral += error;
+            double integralTerm = Ki * integral;
+            double derivative = error - lastError;
+            double derivativeTerm = Kd * derivative;
+
+            output = proportional + integralTerm + derivativeTerm;
+            liftDrive.setPower(output);
+
+            lastError = error;
+            drive.updatePoseEstimate();
+            telemetry.addData("Status", "Lifting arm");
+            telemetry.addData("Axial", axial);
+            telemetry.addData("Lateral", lateral);
+            telemetry.addData("Yaw", yaw);
+            telemetry.addData("Lift Target", targetPosition);
+            telemetry.addData("Lift Current", liftDrive.getCurrentPosition());
+            telemetry.addData("Lift Output", output);
+            telemetry.update();
+        }
+
+        axial = -0.1;
+        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(axial, lateral), yaw));
+
+        while (opModeIsActive() && runtime.seconds() < 17.6) {
+            telemetry.addData("Status", "Lining up");
+            telemetry.addData("Axial", axial);
+            telemetry.addData("Lateral", lateral);
+            telemetry.addData("Yaw", yaw);
+            telemetry.update();
+        }
+
+        axial = 0;
+        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(axial, lateral), yaw));
+
+        while (opModeIsActive() && runtime.seconds() < 20) {
+            leftServo.setPower(-1);
+            rightServo.setPower(-1);
+            telemetry.addData("Status", "Scoring");
+            telemetry.addData("Axial", axial);
+            telemetry.addData("Lateral", lateral);
+            telemetry.addData("Yaw", yaw);
+        }
+
+        leftServo.setPower(0);
+        rightServo.setPower(0);
 
         while (opModeIsActive() && runtime.seconds() < 30.0) {
             // Stop the robot

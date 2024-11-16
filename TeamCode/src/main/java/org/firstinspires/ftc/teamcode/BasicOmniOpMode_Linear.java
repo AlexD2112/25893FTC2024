@@ -133,6 +133,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         double output = 0;
 
         boolean registered = false;
+        boolean braking = false;
         int targetPosition = 0;
 
         // run until the end of the match (driver presses STOP)
@@ -153,20 +154,21 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             // Lift control
             double liftDown = -gamepad1.left_trigger;
             double liftUp = gamepad1.right_trigger;
-            boolean braking = false;
 
-            if (gamepad1.y) {
+            if (gamepad1.y && !braking) {
                 liftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-                liftDrive.setPower(0);
+                liftDrive.setPower(1);
                 braking = true;
+            } else if (gamepad1.y && braking) {
+                braking = false;
             }
 
             if (gamepad1.a) {
-                leftServo.setPower(1);
-                rightServo.setPower(1);
-            } else if (gamepad1.x) {
                 leftServo.setPower(-1);
                 rightServo.setPower(-1);
+            } else if (gamepad1.x) {
+                leftServo.setPower(1);
+                rightServo.setPower(1);
             } else {
                 leftServo.setPower(0);
                 rightServo.setPower(0);
@@ -174,7 +176,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
             int limiter = 1000;
 
-            final int hardstop = 1550;
+            final int hardstop = 1600;
 
             if ((liftDrive.getCurrentPosition() < hardstop) && liftUp != 0 && !braking) {
                 liftDrive.setPower(liftUp * 0.75);
