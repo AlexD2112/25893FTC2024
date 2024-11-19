@@ -63,7 +63,7 @@
                     RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
     
             // drive model parameters
-            public double inPerTick = 1;
+            public double inPerTick = 0.00294777;
             public double lateralInPerTick = inPerTick;
             public double trackWidthTicks = 0;
     
@@ -140,6 +140,7 @@
     
                 // TODO: reverse encoders if needed
                 //   leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+
             }
     
             @Override
