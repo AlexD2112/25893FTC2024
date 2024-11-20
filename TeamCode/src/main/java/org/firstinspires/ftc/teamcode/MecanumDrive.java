@@ -64,12 +64,12 @@
     
             // drive model parameters
             public double inPerTick = 0.00294777;
-            public double lateralInPerTick = inPerTick;
+            public double lateralInPerTick = 0.0022691725265950786;
             public double trackWidthTicks = 0;
     
             // feedforward parameters (in tick units)
-            public double kS = 0;
-            public double kV = 0;
+            public double kS = 0.7557554146678034;
+            public double kV = 0.0005749231553690575;
             public double kA = 0;
     
             // path profile parameters (in inches)

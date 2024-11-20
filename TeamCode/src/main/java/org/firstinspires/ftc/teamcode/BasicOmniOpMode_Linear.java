@@ -141,8 +141,8 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             double speed = 0.75;
 
             // Drivetrain control using Road Runner
-            double axial = gamepad1.left_stick_y;  // Forward/backward
-            double lateral = gamepad1.left_stick_x;  // Strafing
+            double axial = -gamepad1.left_stick_y;  // Forward/backward
+            double lateral = -gamepad1.left_stick_x;  // Strafing
             double yaw = - gamepad1.right_stick_x;  // Rotation
             drive.setDrivePowers(new PoseVelocity2d(new Vector2d(axial, lateral), yaw));
 
