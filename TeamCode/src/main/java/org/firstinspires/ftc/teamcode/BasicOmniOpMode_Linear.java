@@ -157,7 +157,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
             if (gamepad1.y && !braking) {
                 liftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-                liftDrive.setPower(1);
+                liftDrive.setPower(0);
                 braking = true;
             } else if (gamepad1.y && braking) {
                 braking = false;
