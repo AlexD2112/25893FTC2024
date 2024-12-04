@@ -1,11 +1,13 @@
     package org.firstinspires.ftc.teamcode;
-    
+
     import androidx.annotation.NonNull;
-    
+
     import com.acmerobotics.dashboard.canvas.Canvas;
     import com.acmerobotics.dashboard.config.Config;
     import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-    import com.acmerobotics.roadrunner.*;
+    import com.acmerobotics.roadrunner.AccelConstraint;
+    import com.acmerobotics.roadrunner.Action;
+    import com.acmerobotics.roadrunner.Actions;
     import com.acmerobotics.roadrunner.AngularVelConstraint;
     import com.acmerobotics.roadrunner.DualNum;
     import com.acmerobotics.roadrunner.HolonomicController;
@@ -14,13 +16,20 @@
     import com.acmerobotics.roadrunner.MotorFeedforward;
     import com.acmerobotics.roadrunner.Pose2d;
     import com.acmerobotics.roadrunner.Pose2dDual;
+    import com.acmerobotics.roadrunner.PoseVelocity2d;
+    import com.acmerobotics.roadrunner.PoseVelocity2dDual;
     import com.acmerobotics.roadrunner.ProfileAccelConstraint;
+    import com.acmerobotics.roadrunner.ProfileParams;
+    import com.acmerobotics.roadrunner.Rotation2d;
     import com.acmerobotics.roadrunner.Time;
     import com.acmerobotics.roadrunner.TimeTrajectory;
     import com.acmerobotics.roadrunner.TimeTurn;
     import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
+    import com.acmerobotics.roadrunner.TrajectoryBuilderParams;
     import com.acmerobotics.roadrunner.TurnConstraints;
     import com.acmerobotics.roadrunner.Twist2dDual;
+    import com.acmerobotics.roadrunner.Vector2d;
+    import com.acmerobotics.roadrunner.Vector2dDual;
     import com.acmerobotics.roadrunner.VelConstraint;
     import com.acmerobotics.roadrunner.ftc.DownsampledWriter;
     import com.acmerobotics.roadrunner.ftc.Encoder;
@@ -38,15 +47,14 @@
     import com.qualcomm.robotcore.hardware.HardwareMap;
     import com.qualcomm.robotcore.hardware.IMU;
     import com.qualcomm.robotcore.hardware.VoltageSensor;
-    
+
     import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
     import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
     import org.firstinspires.ftc.teamcode.messages.DriveCommandMessage;
     import org.firstinspires.ftc.teamcode.messages.MecanumCommandMessage;
     import org.firstinspires.ftc.teamcode.messages.MecanumLocalizerInputsMessage;
     import org.firstinspires.ftc.teamcode.messages.PoseMessage;
-    
-    import java.lang.Math;
+
     import java.util.Arrays;
     import java.util.LinkedList;
     import java.util.List;
@@ -65,12 +73,12 @@
             // drive model parameters
             public double inPerTick = 0.00294777;
             public double lateralInPerTick = 0.0022691725265950786;
-            public double trackWidthTicks = 0;
+            public double trackWidthTicks = 5160.699307799457;
     
             // feedforward parameters (in tick units)
             public double kS = 0.7557554146678034;
             public double kV = 0.0005749231553690575;
-            public double kA = 0;
+            public double kA = 0.00008;
     
             // path profile parameters (in inches)
             public double maxWheelVel = 50;
