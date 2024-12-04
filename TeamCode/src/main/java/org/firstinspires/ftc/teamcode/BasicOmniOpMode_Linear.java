@@ -76,6 +76,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
     private MecanumDrive drive;
     private DcMotor liftDrive = null;
+    private DcMotor extendDrive = null;
 
     private CRServo leftServo = null;
     private CRServo rightServo = null;
@@ -88,6 +89,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
 
         liftDrive = hardwareMap.get(DcMotor.class, "lift");
+        extendDrive = hardwareMap.get(DcMotor.class, "extend");
         leftServo = hardwareMap.get(CRServo.class, "leftServo");
         rightServo = hardwareMap.get(CRServo.class, "rightServo");
 
@@ -104,11 +106,13 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward
         liftDrive.setDirection(DcMotor.Direction.FORWARD);
+        extendDrive.setDirection(DcMotor.Direction.FORWARD);
         leftServo.setDirection(DcMotorSimple.Direction.FORWARD);
         rightServo.setDirection(DcMotorSimple.Direction.REVERSE);
 
         //Encoder
         liftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        extendDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
@@ -117,24 +121,33 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
-        // THESE CONSTANTS
+        // Lift PID
         // PID Constants (adjust these values during testing)
-//        double Kp = 0.3;
-//        double Ki = 0.005;
-//        double Kd = 0.9;
         double Kp = 0.01;
         double Ki = 0;
         double Kd = 0.001;
-        //<<>>
-
         // PID variables
         double lastError = 0;
         double integral = 0;
         double output = 0;
+        // --------
+
+        // Extend PID
+        // PID Constants (adjust these values during testing)
+        double eKp = 0.01;
+        double eKi = 0;
+        double eKd = 0.001;
+        // PID variables
+        double elastError = 0;
+        double eintegral = 0;
+        double eoutput = 0;
+        // --------
 
         boolean registered = false;
+        boolean eregistered = false;
         boolean braking = false;
         int targetPosition = 0;
+        int etargetPosition = 0;
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
@@ -149,6 +162,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             // Lift control
             double liftDown = -gamepad1.left_trigger;
             double liftUp = gamepad1.right_trigger;
+            double extendPower = gamepad1.touchpad_finger_1_y;
 
             // Locking Control
             if (gamepad1.y && !braking) {
@@ -190,6 +204,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 }
 
                 // PID Control for lift
+                //PIDOutput(0, 0, 0, 0, Kp, Ki, Kd, liftDrive);
                 int currentPosition = liftDrive.getCurrentPosition();
                 double error = targetPosition - currentPosition;
 
@@ -205,10 +220,53 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 lastError = error;
             }
 
+            //Extension Control
+            if (extendPower != 0) {
+                extendDrive.setPower(extendPower * 0.75);
+                eregistered = false;
+            } else {
+                if (!eregistered) {
+                    etargetPosition = extendDrive.getCurrentPosition();
+                    eregistered = true;
+                }
+
+                // PID Control for lift
+                int ecurrentPosition = extendDrive.getCurrentPosition();
+                double eerror = etargetPosition - ecurrentPosition;
+
+                double eproportional = eKp * eerror;
+                eintegral += eerror;
+                double eintegralTerm = eKi * eintegral;
+                double ederivative = eerror - elastError;
+                double ederivativeTerm = eKd * ederivative;
+
+                eoutput = eproportional + eintegralTerm + ederivativeTerm;
+                extendDrive.setPower(eoutput);
+
+                elastError = eerror;
+            }
+
             // Telemetry updates
             telemetry.addData("Lift Target", targetPosition);
             telemetry.addData("Lift Current", liftDrive.getCurrentPosition());
             telemetry.addData("Lift Output", output);
             telemetry.update();
         }
-    }}
+
+    }
+    public double PIDOutput(double targetPosition, double integral, double lastError, double output, double Kp, double Ki, double Kd, DcMotor Motor) {
+        int currentPosition = Motor.getCurrentPosition();
+        double error = targetPosition - currentPosition;
+
+        double proportional = Kp * error;
+        integral += error;
+        double integralTerm = Ki * integral;
+        double derivative = error - lastError;
+        double derivativeTerm = Kd * derivative;
+
+        output = proportional + integralTerm + derivativeTerm;
+        lastError = error;
+        return output;
+    }
+
+}
