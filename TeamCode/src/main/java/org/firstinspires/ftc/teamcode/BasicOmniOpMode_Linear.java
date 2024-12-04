@@ -146,15 +146,11 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             double yaw = - gamepad1.right_stick_x;  // Rotation
             drive.setDrivePowers(new PoseVelocity2d(new Vector2d(axial, lateral), yaw));
 
-            // Intake control
-            double intakePower = gamepad1.right_stick_y;
-            //leftServo.setPower(intakePower * 2);
-            //rightServo.setPower(intakePower * 2);
-
             // Lift control
             double liftDown = -gamepad1.left_trigger;
             double liftUp = gamepad1.right_trigger;
 
+            // Locking Control
             if (gamepad1.y && !braking) {
                 liftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
                 liftDrive.setPower(0);
@@ -164,6 +160,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 braking = false;
             }
 
+            // Intake Control
             if (gamepad1.a) {
                 leftServo.setPower(-1);
                 rightServo.setPower(-1);
@@ -173,21 +170,23 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             } else {
                 leftServo.setPower(0);
                 rightServo.setPower(0);
+                if (gamepad1.right_bumper) {
+                    leftServo.setPower(1);
+                } else if (gamepad1.left_bumper) {
+                    rightServo.setPower(1);
+                }
             }
 
-            int limiter = 1000;
-
-            final int hardstop = 1600;
-
-            if ((liftDrive.getCurrentPosition() < hardstop) && liftUp != 0 && !braking) {
+            // Arm Control
+            if (liftUp != 0 && !braking) {
                 liftDrive.setPower(liftUp * 0.75);
                 registered = false;
-            } else if ((liftDrive.getCurrentPosition() < hardstop) && liftDown != 0 && !braking) {
+            } else if (liftDown != 0 && !braking) {
                 liftDrive.setPower(liftDown * 0.75);
                 registered = false;
             } else if (!braking) {
                 if (!registered) {
-                    targetPosition = Math.min(liftDrive.getCurrentPosition(), hardstop);
+                    targetPosition = liftDrive.getCurrentPosition();
                     registered = true;
                 }
 
@@ -211,7 +210,6 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             telemetry.addData("Lift Target", targetPosition);
             telemetry.addData("Lift Current", liftDrive.getCurrentPosition());
             telemetry.addData("Lift Output", output);
-            telemetry.addData("Intake Power", intakePower);
             telemetry.update();
         }
     }}
