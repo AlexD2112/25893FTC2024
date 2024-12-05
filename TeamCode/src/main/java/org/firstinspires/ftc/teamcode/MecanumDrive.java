@@ -68,12 +68,12 @@
             public RevHubOrientationOnRobot.LogoFacingDirection logoFacingDirection =
                     RevHubOrientationOnRobot.LogoFacingDirection.UP;
             public RevHubOrientationOnRobot.UsbFacingDirection usbFacingDirection =
-                    RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
+                    RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
     
             // drive model parameters
             public double inPerTick = 0.00294777;
             public double lateralInPerTick = 0.0022691725265950786;
-            public double trackWidthTicks = 5160.699307799457;
+            public double trackWidthTicks = 5264.757373880621;
     
             // feedforward parameters (in tick units)
             public double kS = 0.7557554146678034;
