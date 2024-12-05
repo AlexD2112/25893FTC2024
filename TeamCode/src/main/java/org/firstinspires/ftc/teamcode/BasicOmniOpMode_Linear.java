@@ -36,6 +36,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -75,7 +76,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
     // Declare OpMode members for each of the 4 motors.
     private ElapsedTime runtime = new ElapsedTime();
     private MecanumDrive drive;
-    private DcMotor liftDrive = null;
+    private DcMotorEx liftDrive = null;
     private DcMotor extendDrive = null;
 
     private CRServo leftServo = null;
@@ -88,7 +89,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         // to the names assigned during the robot configuration step on the DS or RC devices.
         drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
 
-        liftDrive = hardwareMap.get(DcMotor.class, "lift");
+        liftDrive = hardwareMap.get(DcMotorEx.class, "lift");
         extendDrive = hardwareMap.get(DcMotor.class, "extend");
         leftServo = hardwareMap.get(CRServo.class, "leftServo");
         rightServo = hardwareMap.get(CRServo.class, "rightServo");
@@ -124,8 +125,8 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         // Lift PID
         // PID Constants (adjust these values during testing)
         double Kp = 0.01;
-        double Ki = 0;
-        double Kd = 0.001;
+        double Ki = 0.0;
+        double Kd = 0.0017;
         // PID variables
         double lastError = 0;
         double integral = 0;
@@ -149,6 +150,8 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         int targetPosition = 0;
         int etargetPosition = 0;
 
+        double velocity = 0;
+
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
             double speed = 0.75;
@@ -162,7 +165,8 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             // Lift control
             double liftDown = -gamepad1.left_trigger;
             double liftUp = gamepad1.right_trigger;
-            double extendPower = gamepad1.touchpad_finger_1_y;
+            double extendPower = gamepad1.right_stick_y;
+
 
             // Locking Control
             if (gamepad1.y && !braking) {
@@ -193,10 +197,18 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
             // Arm Control
             if (liftUp != 0 && !braking) {
-                liftDrive.setPower(liftUp * 0.75);
+                liftDrive.setPower(liftUp);
+                velocity = liftDrive.getVelocity();
+                liftDrive.setVelocity(300);
+                //double velocityProp = velocity * 300;
+                //liftDrive.setVelocity(velocityProp);
                 registered = false;
             } else if (liftDown != 0 && !braking) {
-                liftDrive.setPower(liftDown * 0.75);
+                liftDrive.setPower(liftDown);
+                velocity = liftDrive.getVelocity();
+                liftDrive.setVelocity(-650);
+                //double velocityProp = velocity * 300;
+                //liftDrive.setVelocity(velocityProp);
                 registered = false;
             } else if (!braking) {
                 if (!registered) {
@@ -222,10 +234,19 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             }
 
             //Extension Control
+            /*
             if (extendPower != 0) {
                 extendDrive.setPower(extendPower * 0.75);
                 eregistered = false;
-            } else {
+
+             */
+            if (gamepad1.dpad_up) {
+                extendDrive.setPower(-1);
+                eregistered = false;
+            } else if (gamepad1.dpad_down) {
+                extendDrive.setPower(1);
+                eregistered = false;
+            } else if (!gamepad1.dpad_up && !gamepad1.dpad_down){
                 if (!eregistered) {
                     etargetPosition = extendDrive.getCurrentPosition();
                     eregistered = true;
@@ -244,13 +265,16 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 eoutput = eproportional + eintegralTerm + ederivativeTerm;
                 extendDrive.setPower(eoutput);
 
+                telemetry.addData("Extend Position", ecurrentPosition);
+
                 elastError = eerror;
             }
 
             // Telemetry updates
             telemetry.addData("Lift Target", targetPosition);
             telemetry.addData("Lift Current", liftDrive.getCurrentPosition());
-            telemetry.addData("Lift Output", output);
+            telemetry.addData("Lift Output", liftUp);
+            telemetry.addData("Velocity", velocity);
             telemetry.update();
         }
 
