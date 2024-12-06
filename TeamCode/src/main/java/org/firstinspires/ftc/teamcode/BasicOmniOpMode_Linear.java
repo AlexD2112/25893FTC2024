@@ -125,8 +125,8 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         // Lift PID
         // PID Constants (adjust these values during testing)
         double Kp = 0.01;
-        double Ki = 0.0;
-        double Kd = 0.0017;
+        double Ki = 0.0000001;
+        double Kd = 0.003;
         // PID variables
         double lastError = 0;
         double integral = 0;
@@ -199,7 +199,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             if (liftUp != 0 && !braking) {
                 liftDrive.setPower(liftUp);
                 velocity = liftDrive.getVelocity();
-                liftDrive.setVelocity(300);
+                liftDrive.setVelocity(450);
                 //double velocityProp = velocity * 300;
                 //liftDrive.setVelocity(velocityProp);
                 registered = false;
@@ -247,27 +247,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 extendDrive.setPower(1);
                 eregistered = false;
             } else if (!gamepad1.dpad_up && !gamepad1.dpad_down){
-                if (!eregistered) {
-                    etargetPosition = extendDrive.getCurrentPosition();
-                    eregistered = true;
-                }
-
-                // PID Control for lift
-                int ecurrentPosition = extendDrive.getCurrentPosition();
-                double eerror = etargetPosition - ecurrentPosition;
-
-                double eproportional = eKp * eerror;
-                eintegral += eerror;
-                double eintegralTerm = eKi * eintegral;
-                double ederivative = eerror - elastError;
-                double ederivativeTerm = eKd * ederivative;
-
-                eoutput = eproportional + eintegralTerm + ederivativeTerm;
-                extendDrive.setPower(eoutput);
-
-                telemetry.addData("Extend Position", ecurrentPosition);
-
-                elastError = eerror;
+                extendDrive.setPower(0);
             }
 
             // Telemetry updates
