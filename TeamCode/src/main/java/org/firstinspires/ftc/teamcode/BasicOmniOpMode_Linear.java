@@ -248,11 +248,11 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 eregistered = false;
             } else if (!gamepad1.dpad_up && !gamepad1.dpad_down){
                 if (!eregistered) {
-                    etargetPosition = liftDrive.getCurrentPosition();
+                    etargetPosition = extendDrive.getCurrentPosition();
                     eregistered = true;
                 }
 
-                int ecurrentPosition = liftDrive.getCurrentPosition();
+                int ecurrentPosition = extendDrive.getCurrentPosition();
                 double eerror = etargetPosition - ecurrentPosition;
 
                 double eproportional = eKp * eerror;
@@ -262,7 +262,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 double ederivativeTerm = eKd * ederivative;
 
                 eoutput = eproportional + eintegralTerm + ederivativeTerm;
-                liftDrive.setPower(eoutput);
+                extendDrive.setPower(eoutput);
 
                 elastError = eerror;
             }
