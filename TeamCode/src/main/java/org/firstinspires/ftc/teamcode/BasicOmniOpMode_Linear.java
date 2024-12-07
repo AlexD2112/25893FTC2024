@@ -247,7 +247,24 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 extendDrive.setPower(1);
                 eregistered = false;
             } else if (!gamepad1.dpad_up && !gamepad1.dpad_down){
-                extendDrive.setPower(0);
+                if (!eregistered) {
+                    etargetPosition = liftDrive.getCurrentPosition();
+                    eregistered = true;
+                }
+
+                int ecurrentPosition = liftDrive.getCurrentPosition();
+                double eerror = etargetPosition - ecurrentPosition;
+
+                double eproportional = eKp * eerror;
+                eintegral += eerror;
+                double eintegralTerm = eKi * eintegral;
+                double ederivative = eerror - elastError;
+                double ederivativeTerm = eKd * ederivative;
+
+                eoutput = eproportional + eintegralTerm + ederivativeTerm;
+                liftDrive.setPower(eoutput);
+
+                elastError = eerror;
             }
 
             // Telemetry updates
