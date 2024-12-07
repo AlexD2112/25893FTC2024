@@ -163,15 +163,14 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             drive.setDrivePowers(new PoseVelocity2d(new Vector2d(axial, lateral), yaw));
 
             // Lift control
-            double liftUp = -gamepad1.left_trigger;
-            double liftDown = gamepad1.right_trigger;
+            double liftUp = -gamepad1.right_trigger;
+            double liftDown = gamepad1.left_trigger;
 
             // Locking Control
             if (gamepad1.y && !braking) {
                 liftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
                 liftDrive.setPower(1);
                 braking = true;
-
             } else if (gamepad1.y && braking) {
                 braking = false;
             }

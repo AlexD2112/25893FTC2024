@@ -59,7 +59,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class DriveBackwardSlowly extends LinearOpMode {
 
     /* Declare OpMode members. */
-    static final double     FORWARD_SPEED = 0.1;
+    static final double     FORWARD_SPEED = -0.1;
 
     @Override
     public void runOpMode() {
@@ -73,7 +73,7 @@ public class DriveBackwardSlowly extends LinearOpMode {
         waitForStart();
 
         // Define the axial (forward/backward), lateral (sideways), and yaw (rotation) speeds
-        double axial = 0.3;    // Slow backward speed
+        double axial = -0.3;    // Slow backward speed
         double lateral = 0.0;   // No lateral movement
         double yaw = 0.0;       // No rotation
 
