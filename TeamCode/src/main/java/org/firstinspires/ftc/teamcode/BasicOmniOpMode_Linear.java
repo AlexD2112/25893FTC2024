@@ -106,7 +106,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward
-        liftDrive.setDirection(DcMotor.Direction.FORWARD);
+        liftDrive.setDirection(DcMotorEx.Direction.FORWARD);
         extendDrive.setDirection(DcMotor.Direction.FORWARD);
         leftServo.setDirection(DcMotorSimple.Direction.FORWARD);
         rightServo.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -165,13 +165,11 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             // Lift control
             double liftUp = -gamepad1.left_trigger;
             double liftDown = gamepad1.right_trigger;
-            double extendPower = gamepad1.right_stick_y;
-
 
             // Locking Control
             if (gamepad1.y && !braking) {
                 liftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-                liftDrive.setPower(0);
+                liftDrive.setPower(1);
                 braking = true;
 
             } else if (gamepad1.y && braking) {
@@ -197,16 +195,16 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
             // Arm Control
             if (liftUp != 0 && !braking) {
-                liftDrive.setPower(liftUp);
+                liftDrive.setPower(-1);
                 velocity = liftDrive.getVelocity();
-                liftDrive.setVelocity(450);
+                liftDrive.setVelocity(liftUp * 450);
                 //double velocityProp = velocity * 300;
                 //liftDrive.setVelocity(velocityProp);
                 registered = false;
             } else if (liftDown != 0 && !braking) {
-                liftDrive.setPower(liftDown);
+                liftDrive.setPower(1);
                 velocity = liftDrive.getVelocity();
-                liftDrive.setVelocity(-650);
+                liftDrive.setVelocity(liftDown * 400);
                 //double velocityProp = velocity * 300;
                 //liftDrive.setVelocity(velocityProp);
                 registered = false;
@@ -247,6 +245,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 extendDrive.setPower(1);
                 eregistered = false;
             } else if (!gamepad1.dpad_up && !gamepad1.dpad_down){
+                /*
                 if (!eregistered) {
                     etargetPosition = extendDrive.getCurrentPosition();
                     eregistered = true;
@@ -265,6 +264,9 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 extendDrive.setPower(eoutput);
 
                 elastError = eerror;
+                 */
+                extendDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                extendDrive.setPower(0);
             }
 
             // Telemetry updates
