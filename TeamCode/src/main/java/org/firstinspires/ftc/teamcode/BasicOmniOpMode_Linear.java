@@ -124,9 +124,9 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
         // Lift PID
         // PID Constants (adjust these values during testing)
-        double Kp = 0.01;
-        double Ki = 0.0;
-        double Kd = 0.0017;
+        double Kp = 0.002;
+        double Ki = 0;
+        double Kd = 0.05;
         // PID variables
         double lastError = 0;
         double integral = 0;
@@ -197,16 +197,16 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
             // Arm Control
             if (liftUp != 0 && !braking) {
-                liftDrive.setPower(liftUp);
+                liftDrive.setPower(-1);
                 velocity = liftDrive.getVelocity();
-                liftDrive.setVelocity(300);
+                liftDrive.setVelocity(liftUp * 700);
                 //double velocityProp = velocity * 300;
                 //liftDrive.setVelocity(velocityProp);
                 registered = false;
             } else if (liftDown != 0 && !braking) {
-                liftDrive.setPower(liftDown);
+                liftDrive.setPower(1);
                 velocity = liftDrive.getVelocity();
-                liftDrive.setVelocity(-650);
+                liftDrive.setVelocity(liftDown * 700);
                 //double velocityProp = velocity * 300;
                 //liftDrive.setVelocity(velocityProp);
                 registered = false;
