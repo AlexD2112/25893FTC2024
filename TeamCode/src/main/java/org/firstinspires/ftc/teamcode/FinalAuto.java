@@ -26,6 +26,7 @@ public class FinalAuto extends LinearOpMode {
     @Override
     public void runOpMode() {
         Lift lift = new Lift(hardwareMap);
+        lift.setTargetPosition(0);
         Pose2d initialPose = new Pose2d(0, 0, Math.toRadians(0));
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
         Extend extend = new Extend(hardwareMap);
@@ -33,6 +34,7 @@ public class FinalAuto extends LinearOpMode {
 
         // Predefined actions with telemetry
         Action liftToNeutral = lift.liftNeutral();
+        Action liftToNeutral2 = lift.liftNeutral();
         Action liftFullyUp = lift.liftUp();
         Action liftScore = lift.liftScore();
         Action release = intake.release();
@@ -40,7 +42,7 @@ public class FinalAuto extends LinearOpMode {
         Action compress = extend.retractFully();
 
         TrajectoryActionBuilder forward = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(15, -10))
+                .strafeTo(new Vector2d(12.5, 0))
                 .waitSeconds(3);
 
         // Parallel action for arm control
@@ -52,7 +54,7 @@ public class FinalAuto extends LinearOpMode {
                         stretch,
                         liftScore,
                         compress,
-                        release
+                        liftToNeutral2
                 )
         );
 
@@ -70,10 +72,9 @@ public class FinalAuto extends LinearOpMode {
         telemetry.addData("Status", "Running autonomous sequence");
         telemetry.update();
 
-        new Thread(() -> Actions.runBlocking(parallelArmControl)).start();
-
         // Continuous telemetry update for robot position
         while (opModeIsActive()) {
+            Actions.runBlocking(parallelArmControl);
             Pose2d currentPose = drive.pose;
             telemetry.addData("Robot Pos", currentPose.position);
             telemetry.addData("Robot Heading", currentPose.heading);
@@ -96,8 +97,8 @@ public class FinalAuto extends LinearOpMode {
         private final double Kd = 0;//0.03;
 
         // Target positions
-        private final double NEUTRAL_POSITION = -270;
-        private final double SCORE_POSITION = -770;
+        private final double NEUTRAL_POSITION = -390;
+        private final double SCORE_POSITION = -490;
         private final double UP_POSITION = -880;
         private final double DOWN_POSITION = -50;
         private double targetPosition = 0;
@@ -106,9 +107,12 @@ public class FinalAuto extends LinearOpMode {
 
         public Lift(HardwareMap hardwareMap) {
             lift = hardwareMap.get(DcMotorEx.class, "lift");
+            lift.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
             lift.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
             lift.setDirection(DcMotorSimple.Direction.FORWARD);
             lift.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+
+            targetPosition = 0;
         }
 
         public void updatePID() {
