@@ -94,7 +94,7 @@
             public double lateralGain = 5.0;
             public double headingGain = 4.0; // shared with turn
     
-            public double axialVelGain = 1.0;
+            public double axialVelGain = 0.5;
             public double lateralVelGain = 0.0;
             public double headingVelGain = 0.0; // shared with turn
         }
