@@ -21,8 +21,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Config
-@Autonomous(name = "Final Auto", group = "Robot")
-public class FinalAuto extends LinearOpMode {
+@Autonomous(name = "Specimen Sample", group = "Robot")
+public class SpecimenSample extends LinearOpMode {
     @Override
     public void runOpMode() {
         Lift lift = new Lift(hardwareMap);
@@ -53,6 +53,9 @@ public class FinalAuto extends LinearOpMode {
         Action stretch3 = extend.extendFully();
         Action liftScore2 = lift.liftScore();
         Action liftToNeutral3 = lift.liftNeutral();
+        Action liftBasket = lift.liftBasket();
+        Action liftScoreBasket = lift.liftScoreBasket();
+        Action liftBasket2 = lift.liftBasket();
 
 
         TrajectoryActionBuilder forward = drive.actionBuilder(initialPose)
@@ -64,8 +67,16 @@ public class FinalAuto extends LinearOpMode {
                 .lineToX(10);
         Pose2d thirdPose = new Pose2d(10, 0, Math.toRadians(0));
         TrajectoryActionBuilder grab = drive.actionBuilder(thirdPose)
-                .strafeTo(new Vector2d(10, 41.75))
-                .strafeTo(new Vector2d(26, 41.75));
+                .strafeTo(new Vector2d(10, 40.75))
+                .strafeTo(new Vector2d(26, 40.75));
+        Pose2d fourthPose = new Pose2d(20, 40.75, Math.toRadians(0));
+        TrajectoryActionBuilder lineUp = drive.actionBuilder(fourthPose)
+                .strafeTo(new Vector2d(10, 42.75))
+                .turnTo(Math.toRadians(135));
+        Pose2d fifthPose = new Pose2d(10, 42.75, Math.toRadians(135));
+        TrajectoryActionBuilder turnBack = drive.actionBuilder(fifthPose)
+                .strafeTo(new Vector2d(12, 40.75))
+                .turnTo(Math.toRadians(0));
         //13.32
 
         // Parallel action for arm control
@@ -81,8 +92,11 @@ public class FinalAuto extends LinearOpMode {
                         new ParallelAction(release, compress),
                         liftToNeutral2,
                         grab.build(),
-                        lift.stopPID()
-                        //grabSpecimen.build()
+                        lift.stopPID(),
+                        intakePiece,
+                        liftToNeutral3,
+                        lineUp.build()
+                        //,stretch2, liftBasket, liftScoreBasket, release2, liftBasket2, compress2, liftToNeutralAgain, turnBack
                 )
         );
 
@@ -156,7 +170,9 @@ public class FinalAuto extends LinearOpMode {
         private final double HIGH_POSITION = -420;
         private final double SCORE_POSITION = -480;
         private final double UP_POSITION = -880;
-        private final double DOWN_POSITION = -50;
+        private final double BASKET_POSITION = -1100; //UNTESTED
+        private final double SCORE_BASKET_POSITION = -900; //UNTESTED
+
         private double targetPosition = 0;
 
         private boolean activePID = true; // Tracks if the PID is active
@@ -251,6 +267,14 @@ public class FinalAuto extends LinearOpMode {
 
         public Action liftExtendedDown() {
             return createLiftAction(EXTENDED_DOWN_POSITION);
+        }
+
+        public Action liftBasket() {
+            return createLiftAction(BASKET_POSITION);
+        }
+
+        public Action liftScoreBasket() {
+            return createLiftAction(SCORE_BASKET_POSITION);
         }
 
         public double getTargetPosition() {
@@ -370,7 +394,7 @@ public class FinalAuto extends LinearOpMode {
         private final double RELEASE_POWER = 1.0; // Power for release
 
         // 5-second duration for intake/release
-        private static final long INTAKE_DURATION_MS = 3000;
+        private static final long INTAKE_DURATION_MS = 750;
         private static final long DROP_DURATION_MS = 1500;
 
         public Intake(HardwareMap hardwareMap) {
