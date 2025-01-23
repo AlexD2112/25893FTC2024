@@ -44,12 +44,12 @@ public class SpecimenSample extends LinearOpMode {
         Action stop = lift.stopPID();
         Action stretch = extend.extendFully();
         Action stretch2 = extend.extendFully();
-        Action compress = extend.retractFully();
+        Action compress = extend.retractFully(true);
         Action intakePiece = intake.intake();
-        Action compress2 = extend.retractFully();
+        Action compress2 = extend.retractFully(false);
         Action liftToNeutralAgain = lift.liftNeutral();
         Action release2 = intake.release();
-        Action compress3 = extend.retractFully();
+        Action compress3 = extend.retractFully(false);
         Action stretch3 = extend.extendFully();
         Action liftScore2 = lift.liftScore();
         Action liftToNeutral3 = lift.liftNeutral();
@@ -59,10 +59,10 @@ public class SpecimenSample extends LinearOpMode {
 
 
         TrajectoryActionBuilder forward = drive.actionBuilder(initialPose)
-                .lineToX(12.5)
+                .lineToX(14.3)
                 .waitSeconds(3);
 
-        Pose2d secondPose = new Pose2d(13.3, 0, Math.toRadians(0));
+        Pose2d secondPose = new Pose2d(14.3, 0, Math.toRadians(0));
         TrajectoryActionBuilder stepBack = drive.actionBuilder(secondPose)
                 .lineToX(10);
         Pose2d thirdPose = new Pose2d(10, 0, Math.toRadians(0));
@@ -73,10 +73,15 @@ public class SpecimenSample extends LinearOpMode {
         TrajectoryActionBuilder lineUp = drive.actionBuilder(fourthPose)
                 .strafeTo(new Vector2d(10, 42.75))
                 .turnTo(Math.toRadians(135));
-        Pose2d fifthPose = new Pose2d(10, 42.75, Math.toRadians(135));
+        Pose2d scoringPose = new Pose2d(10, 42.75, Math.toRadians(135));
+        TrajectoryActionBuilder moveScore = drive.actionBuilder(scoringPose)
+                .strafeTo(new Vector2d(3, 48.75));
+        Pose2d fifthPose = new Pose2d(7, 45.75, Math.toRadians(135));
         TrajectoryActionBuilder turnBack = drive.actionBuilder(fifthPose)
                 .strafeTo(new Vector2d(12, 40.75))
                 .turnTo(Math.toRadians(0));
+
+
         //13.32
 
         // Parallel action for arm control
@@ -96,7 +101,7 @@ public class SpecimenSample extends LinearOpMode {
                         intakePiece,
                         liftToNeutral3,
                         lineUp.build()
-                        //,stretch2, liftBasket, liftScoreBasket, release2, liftBasket2, compress2, liftToNeutralAgain, turnBack
+                        , liftBasket, stretch2, new ParallelAction(moveScore.build(), liftScoreBasket), release2, new ParallelAction(liftBasket2, compress2), new ParallelAction(liftToNeutralAgain, turnBack.build())
                 )
         );
 
@@ -170,8 +175,8 @@ public class SpecimenSample extends LinearOpMode {
         private final double HIGH_POSITION = -420;
         private final double SCORE_POSITION = -480;
         private final double UP_POSITION = -880;
-        private final double BASKET_POSITION = -1100; //UNTESTED
-        private final double SCORE_BASKET_POSITION = -900; //UNTESTED
+        private final double BASKET_POSITION = -800; //UNTESTED
+        private final double SCORE_BASKET_POSITION = -780; //UNTESTED
 
         private double targetPosition = 0;
 
@@ -346,7 +351,7 @@ public class SpecimenSample extends LinearOpMode {
             };
         }
 
-        public Action retractFully() {
+        public Action retractFully(boolean delayed) {
             return new Action() {
                 private boolean initialized = false;
                 private ElapsedTime timer = new ElapsedTime();
@@ -356,16 +361,27 @@ public class SpecimenSample extends LinearOpMode {
                     if (!initialized) {
                         initialized = true;
                         timer.reset();
-                        extendMotor.setPower(0);
+                        if (delayed) {
+                            extendMotor.setPower(0);
+                        } else {
+                            extendMotor.setPower(RETRACT_POWER);
+                        }
                     }
 
-                    if (timer.milliseconds() >= RETRACT_DURATION_MS * 1.8) {
-                        extendMotor.setPower(0);
-                        return false;
-                    }
-                    if (timer.milliseconds() >= RETRACT_DURATION_MS*0.8) {
-                        extendMotor.setPower(RETRACT_POWER); // Stop motor after time elapses
-                        return true; // Action running
+                    if (delayed) {
+                        if (timer.milliseconds() >= RETRACT_DURATION_MS * 1.8) {
+                            extendMotor.setPower(0);
+                            return false;
+                        }
+                        if (timer.milliseconds() >= RETRACT_DURATION_MS * 0.8) {
+                            extendMotor.setPower(RETRACT_POWER); // Stop motor after time elapses
+                            return true; // Action running
+                        }
+                    } else {
+                        if (timer.milliseconds() >= RETRACT_DURATION_MS) {
+                            extendMotor.setPower(0);
+                            return false;
+                        }
                     }
 
                     return true; // Continue running

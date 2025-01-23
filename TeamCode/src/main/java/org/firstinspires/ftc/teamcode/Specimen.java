@@ -56,10 +56,10 @@ public class Specimen extends LinearOpMode {
 
 
         TrajectoryActionBuilder forward = drive.actionBuilder(initialPose)
-                .lineToX(12.5)
+                .lineToX(14.3)
                 .waitSeconds(3);
 
-        Pose2d secondPose = new Pose2d(13.3, 0, Math.toRadians(0));
+        Pose2d secondPose = new Pose2d(14.3, 0, Math.toRadians(0));
         TrajectoryActionBuilder stepBack = drive.actionBuilder(secondPose)
                 .lineToX(10);
         Pose2d thirdPose = new Pose2d(10, 0, Math.toRadians(0));

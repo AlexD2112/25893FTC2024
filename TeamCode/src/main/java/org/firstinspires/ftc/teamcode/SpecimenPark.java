@@ -53,13 +53,14 @@ public class SpecimenPark extends LinearOpMode {
         Action stretch3 = extend.extendFully();
         Action liftScore2 = lift.liftScore();
         Action liftToNeutral3 = lift.liftNeutral();
+        Action delayAction = telemetryRunner.delayAction();
 
 
         TrajectoryActionBuilder forward = drive.actionBuilder(initialPose)
-                .lineToX(12.5)
+                .lineToX(14.3)
                 .waitSeconds(3);
 
-        Pose2d secondPose = new Pose2d(13.3, 0, Math.toRadians(0));
+        Pose2d secondPose = new Pose2d(14.3, 0, Math.toRadians(0));
         TrajectoryActionBuilder stepBack = drive.actionBuilder(secondPose)
                 .lineToX(10);
         Pose2d thirdPose = new Pose2d(10, 0, Math.toRadians(0));
@@ -72,6 +73,7 @@ public class SpecimenPark extends LinearOpMode {
                 lift.runArmPID(),
                 telemetryRunner.runTelemetry(),
                 new SequentialAction(
+                        delayAction,
                         liftToHigh,
                         forward.build(),
                         stretch,
@@ -116,6 +118,27 @@ public class SpecimenPark extends LinearOpMode {
             this.extend = extend;
             this.intake = intake;
             this.lift = lift;
+        }
+
+        public Action delayAction() {
+            return new Action() {
+                private boolean initialized = false;
+                private ElapsedTime timer = new ElapsedTime();
+
+                @Override
+                public boolean run(TelemetryPacket packet) {
+                    if (!initialized) {
+                        initialized = true;
+                        timer.reset();
+                    }
+
+                    if (timer.seconds() >= 15.2) {
+                        return false; // Action completes after 15.5 seconds
+                    }
+
+                    return true; // Keep running
+                }
+            };
         }
 
         public Action runTelemetry() {
