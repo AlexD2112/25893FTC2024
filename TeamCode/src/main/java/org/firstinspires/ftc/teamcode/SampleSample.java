@@ -27,66 +27,45 @@ public class SampleSample extends LinearOpMode {
     public void runOpMode() {
         Lift lift = new Lift(hardwareMap);
         lift.setTargetPosition(0);
-        Pose2d initialPose = new Pose2d(0, 0, Math.toRadians(0));
+        Pose2d initialPose = new Pose2d(0, -5, Math.toRadians(90));
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
         Extend extend = new Extend(hardwareMap);
         Intake intake = new Intake(hardwareMap);
         TelemetryRunner telemetryRunner = new TelemetryRunner(drive, extend, intake, lift);
 
-        // Predefined actions with telemetry
-        Action liftToHigh = lift.liftHigh();
-        Action liftToNeutral = lift.liftNeutral();
-        Action liftToNeutral2 = lift.liftNeutral();
-        Action liftFullyUp = lift.liftUp();
-        Action liftScore = lift.liftScore();
-        Action liftExtendedDown = lift.liftExtendedDown();
-        Action release = intake.release();
-        Action stop = lift.stopPID();
-        Action stretchHard = extend.extendFully(true);
-        Action stretchHard2 = extend.extendFully(true);
-        Action compress = extend.retractFully(true);
-        Action intakePiece = intake.intake();
-        Action compress2 = extend.retractFully(false);
-        Action liftToNeutralAgain = lift.liftNeutral();
-        Action release2 = intake.release();
-        Action compress3 = extend.retractFully(false);
-        Action stretch3 = extend.extendFully();
-        Action liftScore2 = lift.liftScore();
-        Action liftToNeutral3 = lift.liftNeutral();
-        Action liftBasket = lift.liftBasket();
-        Action liftScoreBasket = lift.liftScoreBasket();
-        Action liftBasket2 = lift.liftBasket();
-        Action liftScoreBasket2 = lift.liftScoreBasket();
-        Action liftBasket3 = lift.liftBasket();
-
-
         TrajectoryActionBuilder moveReadyScore = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(8.5, 9))
-                .turnTo(Math.toRadians(135))
-                .waitSeconds(0.2);
+                .strafeToSplineHeading(new Vector2d(9, 11), Math.toRadians(135));
 
-        Pose2d readyScore = new Pose2d(new Vector2d(8.5, 9), Math.toRadians(135));
+        Pose2d readyScore = new Pose2d(new Vector2d(9, 11), Math.toRadians(135));
 
         TrajectoryActionBuilder moveIntoScore = drive.actionBuilder(readyScore)
-                .strafeTo(new Vector2d(3.5, 20.5))
-                .waitSeconds(0.3);
+                .strafeTo(new Vector2d(3.5, 20.5));
 
         Pose2d scoring = new Pose2d(new Vector2d(4, 20), Math.toRadians(135));
 
         TrajectoryActionBuilder backFromScore = drive.actionBuilder(scoring)
-                .strafeTo(new Vector2d(8.5, 9));
+                .strafeTo(new Vector2d(9, 11));
 
         TrajectoryActionBuilder moveToGrab = drive.actionBuilder(readyScore)
                 .turnTo(Math.toRadians(0));
 
-        Pose2d readyNotFacing = new Pose2d(new Vector2d(8.5, 9), Math.toRadians(0));
+        Pose2d readyNotFacing = new Pose2d(new Vector2d(9, 11), Math.toRadians(0));
 
         TrajectoryActionBuilder spinToScore = drive.actionBuilder(readyNotFacing)
                 .turnTo(Math.toRadians(135))
                 .strafeTo(new Vector2d(3.5, 20.5))
                 .waitSeconds(0.2);
 
+        TrajectoryActionBuilder moveToGrab2 = drive.actionBuilder(readyScore)
+                .turnTo(Math.toRadians(0))
+                .strafeTo(new Vector2d(9, 21));
 
+        Pose2d readyNotFacingSecond = new Pose2d(new Vector2d(9, 21), Math.toRadians(0));
+
+        TrajectoryActionBuilder spinToScore2 = drive.actionBuilder(readyNotFacingSecond)
+                .turnTo(Math.toRadians(135))
+                .strafeTo(new Vector2d(3.5, 20.5))
+                .waitSeconds(0.2);
 
 
         //13.32
@@ -96,25 +75,55 @@ public class SampleSample extends LinearOpMode {
                 lift.runArmPID(),
                 telemetryRunner.runTelemetry(),
                 new SequentialAction(
-                        liftToNeutral,
-                        moveReadyScore.build(),
-                        liftBasket,
-                        stretchHard,
-                        moveIntoScore.build(),
-                        new ParallelAction(liftScoreBasket, release),
-                        backFromScore.build(),
-                        compress,
-                        liftToNeutral2,
-                        moveToGrab.build(),
-                        stretch3,
-                        liftExtendedDown,
-                        intakePiece,
-                        liftToNeutral3,
-                        compress2,
-                        liftBasket2,
-                        new ParallelAction(spinToScore.build(), stretchHard2),
-                        new ParallelAction(liftScoreBasket2, release2),
-                        new ParallelAction(liftBasket3, compress3)
+                        new ParallelAction(
+                                new SequentialAction(
+                                        telemetryRunner.waitAction(0.3),
+                                        moveReadyScore.build()),
+                                lift.liftBasket(),
+                                new SequentialAction(
+                                        telemetryRunner.waitAction(0.7),
+                                        extend.extendFully(true))),
+                        new ParallelAction(
+                                moveIntoScore.build(),
+                                telemetryRunner.waitAction(1), lift.liftScoreBasket(),
+                                telemetryRunner.waitAction(1), intake.release()),
+                        new ParallelAction(
+                                new SequentialAction(
+                                        backFromScore.build(),
+                                        moveToGrab.build()),
+                                new SequentialAction(
+                                        telemetryRunner.waitAction(1.3),
+                                        extend.retractFully(false))
+                        ),
+                        new ParallelAction(
+                                lift.liftExtendedNeutral(),
+                                extend.extendFully()),
+                        lift.liftExtendedNeutral(),
+                        lift.stopPID(),
+                        telemetryRunner.waitAction(0.4),
+                        intake.intake(),
+                        lift.liftBasket(),
+                        new ParallelAction(
+                                moveIntoScore.build(),
+                                telemetryRunner.waitAction(2), lift.liftScoreBasket(),
+                                telemetryRunner.waitAction(1.7), intake.release()),
+                        new ParallelAction(
+                                new SequentialAction(
+                                        backFromScore.build(),
+                                        moveToGrab2.build()),
+                                new SequentialAction(
+                                        telemetryRunner.waitAction(1.3),
+                                        extend.retractFully(false))),
+                        new ParallelAction(
+                                lift.liftExtendedNeutral(),
+                                extend.extendFully()),
+                        lift.stopPID(),
+                        telemetryRunner.waitAction(0.6),
+                        intake.intake(),
+                        new ParallelAction(lift.liftNeutral(), extend.retractFully(false)),
+                        lift.liftBasket(),
+                        new ParallelAction(spinToScore.build(), extend.extendFully(true)),
+                        new ParallelAction(lift.liftScoreBasket(), intake.release())
                 )
         );
 
@@ -168,6 +177,26 @@ public class SampleSample extends LinearOpMode {
                 }
             };
         }
+        public Action waitAction(double seconds) {
+            return new Action() {
+                private boolean initialized = false;
+                private ElapsedTime timer = new ElapsedTime();
+
+                @Override
+                public boolean run(TelemetryPacket packet) {
+                    if (!initialized) {
+                        initialized = true;
+                        timer.reset();
+                    }
+
+                    if (timer.seconds() >= seconds) {
+                        return false; // Action complete
+                    }
+
+                    return true; // Keep running
+                }
+            };
+        }
     }
 
     public class Lift {
@@ -184,12 +213,13 @@ public class SampleSample extends LinearOpMode {
         // Target positions
         private final double NEUTRAL_POSITION = -250;
         private final double EXTENDED_DOWN_POSITION = -150;
+        private final double EXTENDED_NEUTRAL_POSITION = -350;
         private final double LOW_POSITION = -50;
         private final double HIGH_POSITION = -420;
         private final double SCORE_POSITION = -480;
         private final double UP_POSITION = -880;
         private final double BASKET_POSITION = -840; //UNTESTED
-        private final double SCORE_BASKET_POSITION = -820; //UNTESTED
+        private final double SCORE_BASKET_POSITION = -800; //UNTESTED
 
         private double targetPosition = 0;
 
@@ -286,6 +316,10 @@ public class SampleSample extends LinearOpMode {
 
         public Action liftExtendedDown() {
             return createLiftAction(EXTENDED_DOWN_POSITION);
+        }
+
+        public Action liftExtendedNeutral() {
+            return createLiftAction(EXTENDED_NEUTRAL_POSITION);
         }
 
         public Action liftBasket() {
@@ -429,8 +463,8 @@ public class SampleSample extends LinearOpMode {
         private final double RELEASE_POWER = 1.0; // Power for release
 
         // 5-second duration for intake/release
-        private static final long INTAKE_DURATION_MS = 300;
-        private static final long DROP_DURATION_MS = 1500;
+        private static final long INTAKE_DURATION_MS = 380;
+        private static final long DROP_DURATION_MS = 1000;
 
         public Intake(HardwareMap hardwareMap) {
             leftServo = hardwareMap.get(CRServo.class, "leftServo");
