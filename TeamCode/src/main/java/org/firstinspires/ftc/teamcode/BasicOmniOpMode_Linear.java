@@ -124,9 +124,12 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
         // Lift PID
         // PID Constants (adjust these values during testing)
-        double Kp = 0.01;
-        double Ki = 0.0000001;
-        double Kd = 0.003;
+//        double Kp = 0.01;
+//        double Ki = 0.0000001;
+//        double Kd = 0.003;
+        double Kp = 0.002;
+        double Ki = 0.000001;
+        double Kd = 0.001;
         // PID variables
         double lastError = 0;
         double integral = 0;
@@ -199,6 +202,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 liftDrive.setVelocity(liftUp * 450);
                 //double velocityProp = velocity * 300;
                 //liftDrive.setVelocity(velocityProp);
+                integral = 0;
                 registered = false;
             } else if (liftDown != 0 && !braking) {
                 liftDrive.setPower(1);
@@ -206,6 +210,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 liftDrive.setVelocity(liftDown * 400);
                 //double velocityProp = velocity * 300;
                 //liftDrive.setVelocity(velocityProp);
+                integral = 0;
                 registered = false;
             } else if (!braking) {
                 if (!registered) {
@@ -219,12 +224,13 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 double error = targetPosition - currentPosition;
 
                 double proportional = Kp * error;
+                integral *= 0.95;
                 integral += error;
                 double integralTerm = Ki * integral;
                 double derivative = error - lastError;
                 double derivativeTerm = Kd * derivative;
 
-                output = proportional + integralTerm + derivativeTerm;
+                output = proportional + integralTerm - derivativeTerm;
                 liftDrive.setPower(output);
 
                 lastError = error;
