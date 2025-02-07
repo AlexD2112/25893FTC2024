@@ -11,6 +11,7 @@ import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -23,8 +24,16 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @Config
 @Autonomous(name = "Sample Sample", group = "Robot")
 public class SampleSample extends LinearOpMode {
+    private Limelight3A limelight;
+
     @Override
     public void runOpMode() {
+        // Limelight
+        //limelight = hardwareMap.get(LimeLight3A.class, "limelight");
+        //telemetry.setMsTransmissionInterval(11);
+        //limelight.setPipeline(2);
+        //limelight.start();
+
         Lift lift = new Lift(hardwareMap);
         lift.setTargetPosition(0);
         Pose2d initialPose = new Pose2d(0, -5, Math.toRadians(90));

@@ -39,6 +39,10 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import com.qualcomm.hardware.limelightvision.LLStatus;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 
 /*
@@ -82,8 +86,16 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
     private CRServo leftServo = null;
     private CRServo rightServo = null;
 
+    private Limelight3A limelight;
+
     @Override
     public void runOpMode() {
+
+        // Limelight
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        telemetry.setMsTransmissionInterval(11);
+        limelight.pipelineSwitch(2);
+        limelight.start();
 
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
@@ -154,13 +166,21 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
+            LLResult result = limelight.getLatestResult();
+            if (result != null) {
+                if (result.isValid()) {
+                    telemetry.addData("tx", result.getTx());
+                    telemetry.addData("ty", result.getTy());
+                }
+            }
+
             double speed = 0.75;
 
             // Drivetrain control using Road Runner
             double axial = -gamepad1.left_stick_y;  // Forward/backward
             double lateral = -gamepad1.left_stick_x;  // Strafing
             double yaw = - gamepad1.right_stick_x;  // Rotation
-            drive.setDrivePowers(new PoseVelocity2d(new Vector2d(axial, lateral), yaw));
+            drive.setDrivePowers(new PoseVelocity2d(new Vector2d(axial, lateral), result.getTx()));
 
             // Lift control
             double liftUp = -gamepad1.right_trigger;
