@@ -32,8 +32,6 @@ package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
-import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -41,6 +39,10 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import com.qualcomm.hardware.limelightvision.LLStatus;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 
 /*
@@ -74,8 +76,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @TeleOp(name="Basic: Omni Linear OpMode V2", group="Linear OpMode")
 //@Disabled
 public class BasicOmniOpMode_Linear extends LinearOpMode {
-    // Limelight Initialization
-    private Limelight3A limelight;
 
     // Declare OpMode members for each of the 4 motors.
     private ElapsedTime runtime = new ElapsedTime();
@@ -86,9 +86,12 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
     private CRServo leftServo = null;
     private CRServo rightServo = null;
 
+    private Limelight3A limelight;
+
     @Override
     public void runOpMode() {
-        // Limelight setup
+
+        // Limelight
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         telemetry.setMsTransmissionInterval(11);
         limelight.pipelineSwitch(2);
@@ -136,7 +139,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 //        double Kp = 0.01;
 //        double Ki = 0.0000001;
 //        double Kd = 0.003;
-        double Kp = 0.001;
+        double Kp = 0.002;
         double Ki = 0.000001;
         double Kd = 0.005;
         // PID variables
@@ -198,12 +201,12 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             double axial = -gamepad1.left_stick_y;  // Forward/backward
             double lateral = -gamepad1.left_stick_x;  // Strafing
             double yaw = - gamepad1.right_stick_x;  // Rotation
-            drive.setDrivePowers(new PoseVelocity2d(new Vector2d(axial, lateral), yaw));
+            drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), result.getTx()));
 
             // Lift control
             double liftUp = -gamepad1.right_trigger;
             double liftDown = gamepad1.left_trigger;
-            telemetry.addData("tracking", istracking);
+            //telemetry.addData("tracking", istracking);
 
             // Tracking Control
             if (gamepad1.b) {
@@ -325,9 +328,9 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 }
 
                 // New PID
-                double currentPosition = extendDrive.getCurrentPosition();
-                double extendoutput = ExtendPID.calculate(currentPosition);
-                extendDrive.setPower(extendoutput);
+                //double currentPosition = extendDrive.getCurrentPosition();
+                //double extendoutput = ExtendPID.calculate(currentPosition);
+                //extendDrive.setPower(extendoutput);
 
 
                 int ecurrentPosition = extendDrive.getCurrentPosition();
@@ -343,8 +346,6 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 extendDrive.setPower(eoutput);
 
                 elastError = eerror;
-
-
 
                 extendDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
                 extendDrive.setPower(0);

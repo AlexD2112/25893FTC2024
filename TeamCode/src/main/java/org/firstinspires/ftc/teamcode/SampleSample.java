@@ -11,6 +11,7 @@ import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -24,8 +25,16 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @Config
 @Autonomous(name = "Sample Sample", group = "Robot")
 public class SampleSample extends LinearOpMode {
+    private Limelight3A limelight;
+
     @Override
     public void runOpMode() {
+        // Limelight
+        //limelight = hardwareMap.get(LimeLight3A.class, "limelight");
+        //telemetry.setMsTransmissionInterval(11);
+        //limelight.setPipeline(2);
+        //limelight.start();
+
         Lift lift = new Lift(hardwareMap);
         lift.setTargetPosition(0);
         Pose2d initialPose = new Pose2d(0, -5, Math.toRadians(90));
@@ -58,7 +67,9 @@ public class SampleSample extends LinearOpMode {
                 .waitSeconds(0.2);
 
         TrajectoryActionBuilder moveToGrab2 = drive.actionBuilder(scoring)
-                .strafeToLinearHeading(new Vector2d(9, 21), Math.toRadians(0));
+                .strafeToLinearHeading(new Vector2d(9, 21), Math.toRadians(0))
+                .turnTo(Math.toRadians(1))
+                .turnTo(Math.toRadians(0));
 
         Pose2d readyNotFacingSecond = new Pose2d(new Vector2d(9, 21), Math.toRadians(0));
 
@@ -69,10 +80,10 @@ public class SampleSample extends LinearOpMode {
 
         TrajectoryActionBuilder spinGrab3 = drive.actionBuilder(scoring)
                 .strafeTo(new Vector2d(10, 15))
-                .turnTo(Math.toRadians(24))
-                .strafeTo(new Vector2d(11.5, 17.4));
+                .turnTo(Math.toRadians(27))
+                .strafeTo(new Vector2d(13, 18));
 
-        Pose2d grabbed3 = new Pose2d(new Vector2d(11.5, 17.4), Math.toRadians(24));
+        Pose2d grabbed3 = new Pose2d(new Vector2d(13.5, 18), Math.toRadians(27));
 
         TrajectoryActionBuilder moveFinalScore = drive.actionBuilder(grabbed3)
                 .strafeToLinearHeading(new Vector2d(12, 12), Math.toRadians(135))
@@ -86,26 +97,26 @@ public class SampleSample extends LinearOpMode {
                 lift.runArmPID(),
                 telemetryRunner.runTelemetry(),
                 new SequentialAction(
-                        telemetryRunner.waitAction(10),
                         new ParallelAction(
                                 new SequentialAction(
                                         telemetryRunner.waitAction(0.4),
                                         moveReadyScore.build()),
                                 lift.liftBasket(),
                                 new SequentialAction(
-                                        telemetryRunner.waitAction(0.7),
+                                        telemetryRunner.waitAction(0.8),
                                         extend.extendFully(true)),
                                 new SequentialAction(
-                                        telemetryRunner.waitAction(1.1),
+                                        telemetryRunner.waitAction(1.4),
                                         moveIntoScore.build()),
                                 new SequentialAction(
-                                        telemetryRunner.waitAction(1.8),
+                                        telemetryRunner.waitAction(2),
                                         lift.liftScoreBasket()),
                                 new SequentialAction(
                                         telemetryRunner.waitAction(2.1),
                                         intake.release())
                         ),
                         new ParallelAction(
+                                lift.liftFullUp(),
                                 new SequentialAction(
                                         backFromScore.build(),
                                         moveToGrab.build()),
@@ -124,18 +135,22 @@ public class SampleSample extends LinearOpMode {
                                 new SequentialAction(
                                         telemetryRunner.waitAction(2.8),
                                         lift.stopPID()
+                                ),
+                                new SequentialAction(
+                                        telemetryRunner.waitAction(1.7),
+                                        intake.intakeTime(1700)
                                 )
                         ),
                         new ParallelAction(
-                                intake.intake(),
-                                new SequentialAction(telemetryRunner.waitAction(0.7), extend.retractFully(false)),
-                                new SequentialAction(telemetryRunner.waitAction(0.9), lift.liftBasket()),
-                                new SequentialAction(telemetryRunner.waitAction(1.4), moveIntoScore.build()),
-                                new SequentialAction(telemetryRunner.waitAction(2.1), extend.extendFully(true)),
-                                new SequentialAction(telemetryRunner.waitAction(3.7), lift.liftScoreBasket()),
-                                new SequentialAction(telemetryRunner.waitAction(4), intake.release())
+                                new SequentialAction(telemetryRunner.waitAction(0), extend.retractFully(false)),
+                                new SequentialAction(telemetryRunner.waitAction(0.2), lift.liftBasket()),
+                                new SequentialAction(telemetryRunner.waitAction(0.7), moveIntoScore.build()),
+                                new SequentialAction(telemetryRunner.waitAction(1.8), extend.extendFully(true)),
+                                new SequentialAction(telemetryRunner.waitAction(3), lift.liftScoreBasket()),
+                                new SequentialAction(telemetryRunner.waitAction(3.3), intake.release())
                         ),
                         new ParallelAction(
+                                lift.liftFullUp(),
                                 new SequentialAction(
                                         moveToGrab2.build()
                                 ),
@@ -154,27 +169,30 @@ public class SampleSample extends LinearOpMode {
                                 new SequentialAction(
                                         telemetryRunner.waitAction(2.8),
                                         lift.stopPID()
+                                ),
+                                new SequentialAction(
+                                        telemetryRunner.waitAction(1.7),
+                                        intake.intakeTime(1700)
                                 )
                         ),
                         new ParallelAction(
-                                intake.intake(),
-                                new SequentialAction(telemetryRunner.waitAction(0.7), extend.retractFully(false)),
-                                new SequentialAction(telemetryRunner.waitAction(0.9), lift.liftBasket()),
-                                new SequentialAction(telemetryRunner.waitAction(1.4), moveIntoScore.build()),
-                                new SequentialAction(telemetryRunner.waitAction(2.1), extend.extendFully(true)),
-                                new SequentialAction(telemetryRunner.waitAction(3.7), lift.liftScoreBasket()),
-                                new SequentialAction(telemetryRunner.waitAction(4), intake.release())
+                                new SequentialAction(telemetryRunner.waitAction(0), extend.retractFully(false)),
+                                new SequentialAction(telemetryRunner.waitAction(0.2), lift.liftBasket()),
+                                new SequentialAction(telemetryRunner.waitAction(0.7), moveIntoScore.build()),
+                                new SequentialAction(telemetryRunner.waitAction(1.8), extend.extendFully(true)),
+                                new SequentialAction(telemetryRunner.waitAction(3), lift.liftScoreBasket()),
+                                new SequentialAction(telemetryRunner.waitAction(3.3), intake.release())
                         ),
                         new ParallelAction(
                                 lift.liftFullUp(),
                                 new SequentialAction(
-                                        telemetryRunner.waitAction(0.3),
+                                        telemetryRunner.waitAction(0.5),
                                         extend.retractFully(false),
-                                        telemetryRunner.waitAction(0.3),
+                                        telemetryRunner.waitAction(0.1),
                                         extend.extendFully()
                                 ),
                                 new SequentialAction(
-                                        telemetryRunner.waitAction(0.2),
+                                        telemetryRunner.waitAction(0.25),
                                         spinGrab3.build()
                                 ),
                                 new SequentialAction(
@@ -186,22 +204,25 @@ public class SampleSample extends LinearOpMode {
                                         lift.liftExtendedNeutral()
                                 ),
                                 new SequentialAction(
-                                        telemetryRunner.waitAction(2.4),
+                                        telemetryRunner.waitAction(2.8),
                                         lift.liftNeutral()
                                 ),
                                 new SequentialAction(
-                                        telemetryRunner.waitAction(2.8),
+                                        telemetryRunner.waitAction(3.2),
                                         lift.stopPID()
+                                ),
+                                new SequentialAction(
+                                        telemetryRunner.waitAction(2.1),
+                                        intake.intakeTime(1700)
                                 )
                         ),
                         new ParallelAction(
-                                intake.intake(),
-                                new SequentialAction(telemetryRunner.waitAction(0.7), extend.retractFully(false)),
-                                new SequentialAction(telemetryRunner.waitAction(0.9), lift.liftFullUp()),
-                                new SequentialAction(telemetryRunner.waitAction(1.4), moveFinalScore.build()),
-                                new SequentialAction(telemetryRunner.waitAction(2.1), extend.extendFully(true)),
-                                new SequentialAction(telemetryRunner.waitAction(3.7), lift.liftScoreBasket()),
-                                new SequentialAction(telemetryRunner.waitAction(4), intake.release())
+                                new SequentialAction(telemetryRunner.waitAction(0), extend.retractFully(false)),
+                                new SequentialAction(telemetryRunner.waitAction(0.2), lift.liftFullUp()),
+                                new SequentialAction(telemetryRunner.waitAction(0.7), moveFinalScore.build()),
+                                new SequentialAction(telemetryRunner.waitAction(1.8), extend.extendFully(true)),
+                                new SequentialAction(telemetryRunner.waitAction(3), lift.liftScoreBasket()),
+                                new SequentialAction(telemetryRunner.waitAction(3.3), intake.release())
                         )
                 )
         );
@@ -311,7 +332,7 @@ public class SampleSample extends LinearOpMode {
         // Target positions
         private final double NEUTRAL_POSITION = -250;
         private final double EXTENDED_DOWN_POSITION = -150;
-        private final double EXTENDED_NEUTRAL_POSITION = -350;
+        private final double EXTENDED_NEUTRAL_POSITION = -330;
         private final double LOW_POSITION = -50;
         private final double HIGH_POSITION = -420;
         private final double SCORE_POSITION = -480;
@@ -319,7 +340,7 @@ public class SampleSample extends LinearOpMode {
         private final double BASKET_POSITION = -840; //UNTESTED
         private final double SCORE_BASKET_POSITION = -800; //UNTESTED
         private final double EXTENDED_UP_POSITION = -640;
-        private final double FULL_UP_POSITION = -910;
+        private final double FULL_UP_POSITION = -880;
         public double integralTerm;
         public double derivativeTerm;
         public double proportional;
@@ -355,7 +376,7 @@ public class SampleSample extends LinearOpMode {
             double derivative = error - lastError;
             derivativeTerm = LiftConfig.Kd * derivative;
 
-            lastOutput = proportional + integralTerm - derivativeTerm;
+            lastOutput = proportional + integralTerm + derivativeTerm;
             lift.setPower(lastOutput);
 //            lift.setPower(lastOutput < 0 ? Math.min(Math.max(lastOutput, -0.5), -0.0005) : Math.min(lastOutput, 0.6));
 
@@ -514,7 +535,7 @@ public class SampleSample extends LinearOpMode {
             return new Action() {
                 private boolean initialized = false;
                 private ElapsedTime timer = new ElapsedTime();
-                private double extend_duration = stretchHard ? EXTEND_DURATION_MS * 1.3 : EXTEND_DURATION_MS;
+                private double extend_duration = stretchHard ? EXTEND_DURATION_MS * 1.17 : EXTEND_DURATION_MS;
 
                 @Override
                 public boolean run(TelemetryPacket packet) {
@@ -607,6 +628,38 @@ public class SampleSample extends LinearOpMode {
             // Set directions for servos (adjust based on your setup)
             leftServo.setDirection(CRServo.Direction.FORWARD);
             rightServo.setDirection(CRServo.Direction.REVERSE);
+        }
+
+        public Action intakeTime(double timeMilliseconds) {
+            return new Action() {
+                private boolean initialized = false;
+                private ElapsedTime timer = new ElapsedTime();
+
+                @Override
+                public boolean run(@NonNull TelemetryPacket packet) {
+                    if (!initialized) {
+                        initialized = true;
+                        timer.reset();
+                        // Start intake
+                        leftServo.setPower(INTAKE_POWER);
+                        rightServo.setPower(INTAKE_POWER);
+                    }
+
+                    // Send telemetry data if desired
+                    packet.put("Intake Status", "Running");
+                    packet.put("Intake Elapsed Time (ms)", timer.milliseconds());
+
+                    // After 5 seconds, stop the servos and complete the action
+                    if (timer.milliseconds() >= timeMilliseconds) {
+                        leftServo.setPower(0);
+                        rightServo.setPower(0);
+                        packet.put("Intake Status", "Complete");
+                        return false; // Action complete
+                    }
+
+                    return true; // Keep running until 5 seconds pass
+                }
+            };
         }
 
         public Action intake() {
