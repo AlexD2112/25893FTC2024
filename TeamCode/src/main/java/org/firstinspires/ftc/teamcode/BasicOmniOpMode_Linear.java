@@ -32,6 +32,8 @@ package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -72,6 +74,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @TeleOp(name="Basic: Omni Linear OpMode V2", group="Linear OpMode")
 //@Disabled
 public class BasicOmniOpMode_Linear extends LinearOpMode {
+    // Limelight Initialization
+    private Limelight3A limelight;
 
     // Declare OpMode members for each of the 4 motors.
     private ElapsedTime runtime = new ElapsedTime();
@@ -84,6 +88,11 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+        // Limelight setup
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        telemetry.setMsTransmissionInterval(11);
+        limelight.pipelineSwitch(2);
+        limelight.start();
 
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
@@ -127,9 +136,9 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 //        double Kp = 0.01;
 //        double Ki = 0.0000001;
 //        double Kd = 0.003;
-        double Kp = 0.002;
+        double Kp = 0.001;
         double Ki = 0.000001;
-        double Kd = 0.001;
+        double Kd = 0.005;
         // PID variables
         double lastError = 0;
         double integral = 0;
@@ -147,9 +156,21 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         double eoutput = 0;
         // --------
 
+        // Tracking PID
+        // PID Constants (adjust these values during testing)
+        double tKp = 0.01;
+        double tKi = 0;
+        double tKd = 0.001;
+        // PID variables
+        double tlastError = 0;
+        double tintegral = 0;
+        double toutput = 0;
+        // --------
+
         boolean registered = false;
         boolean eregistered = false;
         boolean braking = false;
+        boolean istracking = false;
         int targetPosition = 0;
         int etargetPosition = 0;
 
@@ -157,6 +178,20 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
+            // Create PIDS
+            PIDController ArmPID = new PIDController(Kp, Ki, Kd);
+            PIDController ExtendPID = new PIDController(eKp, eKi, eKd);
+            PIDController TrackPID = new PIDController(0, 0, 0);
+
+            LLResult result = limelight.getLatestResult();
+            if (result != null) {
+                if (result.isValid()) {
+                    telemetry.addData("tx", result.getTx());
+                    telemetry.addData("ty", result.getTy());
+                    telemetry.addData("tOutput", 0);
+                }
+            }
+
             double speed = 0.75;
 
             // Drivetrain control using Road Runner
@@ -168,6 +203,30 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             // Lift control
             double liftUp = -gamepad1.right_trigger;
             double liftDown = gamepad1.left_trigger;
+            telemetry.addData("tracking", istracking);
+
+            // Tracking Control
+            if (gamepad1.b) {
+                if (result != null) {
+                    if (result.isValid()) {
+                        double trackingoffset = result.getTx();
+                        double terror = 0 - trackingoffset;
+
+                        double tproportional = tKp * terror;
+                        tintegral *= 0.95;
+                        tintegral += terror;
+                        double tintegralTerm = tKi * tintegral;
+                        double tderivative = terror - tlastError;
+                        double tderivativeTerm = tKd * tderivative;
+
+                        toutput = tproportional + tintegralTerm - tderivativeTerm;
+
+                        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), -75 * Math.toRadians(toutput)));
+
+                        tlastError = terror;
+                    }
+                }
+            }
 
             // Locking Control
             if (gamepad1.y && !braking) {
@@ -215,11 +274,18 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             } else if (!braking) {
                 if (!registered) {
                     targetPosition = liftDrive.getCurrentPosition();
+                    ArmPID.setPoint(targetPosition);
                     registered = true;
                 }
 
+                // New PID Management
+                //double currentPosition = liftDrive.getCurrentPosition();
+                //double armoutput = ArmPID.calculate(currentPosition);
+                //liftDrive.setPower(armoutput);
+
                 // PID Control for lift
                 //PIDOutput(0, 0, 0, 0, Kp, Ki, Kd, liftDrive);
+
                 int currentPosition = liftDrive.getCurrentPosition();
                 double error = targetPosition - currentPosition;
 
@@ -234,6 +300,8 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 liftDrive.setPower(output);
 
                 lastError = error;
+
+
             }
 
             //Extension Control
@@ -252,8 +320,15 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             } else if (!gamepad1.dpad_up && !gamepad1.dpad_down){
                 if (!eregistered) {
                     etargetPosition = extendDrive.getCurrentPosition();
+                    ExtendPID.setPoint(etargetPosition);
                     eregistered = true;
                 }
+
+                // New PID
+                double currentPosition = extendDrive.getCurrentPosition();
+                double extendoutput = ExtendPID.calculate(currentPosition);
+                extendDrive.setPower(extendoutput);
+
 
                 int ecurrentPosition = extendDrive.getCurrentPosition();
                 double eerror = etargetPosition - ecurrentPosition;
@@ -269,6 +344,8 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
 
                 elastError = eerror;
 
+
+
                 extendDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
                 extendDrive.setPower(0);
             }
@@ -277,6 +354,7 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             telemetry.addData("Lift Target", targetPosition);
             telemetry.addData("Lift Current", liftDrive.getCurrentPosition());
             telemetry.addData("Lift Output", liftUp);
+            telemetry.addData("toutput", toutput);
             telemetry.addData("Velocity", velocity);
             telemetry.update();
         }
